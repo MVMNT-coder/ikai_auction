@@ -1,6 +1,6 @@
 // GAS をウェブアプリとしてデプロイしたときの URL（https://script.google.com/macros/s/.../exec）をここに貼る。
 // 空のままだと「模擬鑑定」モード（Claudeを呼ばず、用意した台本で競売）で動く。
-window.GAS_URL = "";
+window.GAS_URL = "https://script.google.com/macros/s/AKfycbwBLSOhklIwofg4-qORtb337xRcERsQwtLeATSVxGgMUi_Rld6iGnGpCrpfamNoLdvr4w/exec";
 
 window.AUCTION = {
   minSec: 8,      // 自動シャッターの最短間隔（秒）
