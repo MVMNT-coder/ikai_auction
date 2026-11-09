@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>異界オークション</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&family=Noto+Sans+JP:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: 16:9モニター1画面。左に常時監視カメラ、右に競売台。下に落札記録の帯。黒地＋蛍光オレンジ（未来救出局と同じ系譜） */
+:root{
+  --bk:#0a0a0a; --line:#2b2b2b; --fg:#f1f1f1; --mute:#8c8c8c; --or:#ff5c00; --or-dim:#7a2c00;
+  --f-disp:"Zen Kaku Gothic New","Noto Sans JP",system-ui,sans-serif;
+  --f-body:"Noto Sans JP","Hiragino Sans",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,monospace;
+  --u:min(1vw,1.78vh);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bk);color:var(--fg);height:100%;margin:0}
+body{font-family:var(--f-body);font-size:clamp(14px,calc(var(--u)*1.05),22px);line-height:1.7;overflow:hidden}
+button{font:inherit;color:inherit}
+.wrap{position:relative;z-index:1;max-width:min(96vw,170vh);margin:0 auto;height:100vh;height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:calc(var(--u)*1.3);
+  padding-block:calc(var(--u)*1.1) calc(var(--u)*1.3);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* ヘッダー */
+header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:2px solid var(--or);padding-bottom:calc(var(--u)*.7)}
+.logo{font-family:var(--f-disp);font-weight:900;font-size:clamp(22px,calc(var(--u)*1.9),42px);line-height:1;letter-spacing:.04em;white-space:nowrap}
+.logo em{font-style:normal;color:var(--or)}
+.hr{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.lbl{font-family:var(--f-mono);font-size:clamp(11px,calc(var(--u)*.72),16px);letter-spacing:.14em;color:var(--or);text-transform:uppercase}
+.lbl.mute,.mute{color:var(--mute)}
+.lbl.alert{animation:blink 1.6s steps(2) infinite}
+.snd{font-family:var(--f-mono);font-size:clamp(11px,calc(var(--u)*.68),15px);letter-spacing:.12em;color:var(--mute);background:transparent;border:1px solid var(--line);padding:.35em .7em;cursor:pointer}
+.snd[aria-pressed="true"]{color:#000;background:var(--or);border-color:var(--or)}
+.snd:focus-visible,.btn:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+
+/* 本体 */
+main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);align-items:center;min-height:0}
+.camcol{display:flex;flex-direction:column;gap:calc(var(--u)*.8);min-width:0}
+
+/* カメラHUD：画面の一部として常に開いている */
+.hud-cam{position:relative;height:min(68vh,calc(var(--u)*42));width:auto;aspect-ratio:4/3;max-width:100%;background:#000;overflow:hidden;border:1px solid rgba(255,92,0,.35);transition:border-color .3s,box-shadow .3s}
+.hud-cam video,.hud-cam .freeze{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hud-cam video{filter:grayscale(.35) contrast(1.08) saturate(.8)}
+.hud-cam .freeze{filter:grayscale(1) contrast(1.2);mix-blend-mode:normal;opacity:0;transition:opacity .2s}
+.hud-cam.seized .freeze{opacity:1}
+.hud-cam .tint{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.2) 0 1px,transparent 1px 3px),radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.65));pointer-events:none}
+.hud-cam .orwash{position:absolute;inset:0;background:var(--or);mix-blend-mode:multiply;opacity:0;transition:opacity .3s;pointer-events:none}
+.hud-cam.seized .orwash{opacity:1}
+.br{position:absolute;width:calc(var(--u)*2.4);height:calc(var(--u)*2.4);border:2px solid var(--or)}
+.b1{top:12px;left:12px;border-right:0;border-bottom:0}.b2{top:12px;right:12px;border-left:0;border-bottom:0}
+.b3{bottom:12px;left:12px;border-right:0;border-top:0}.b4{bottom:12px;right:12px;border-left:0;border-top:0}
+.reticle{position:absolute;left:50%;top:50%;width:34%;aspect-ratio:1;transform:translate(-50%,-50%);border:1px solid rgba(255,92,0,.55);border-radius:50%;transition:width .5s cubic-bezier(.2,1.4,.4,1),border-color .3s}
+.reticle::before,.reticle::after{content:"";position:absolute;background:var(--or)}
+.reticle::before{left:50%;top:-12px;bottom:-12px;width:1px}
+.reticle::after{top:50%;left:-12px;right:-12px;height:1px}
+.reticle i{position:absolute;inset:14%;border:1px dashed rgba(255,92,0,.45);border-radius:50%;animation:spin 9s linear infinite}
+.hud-cam.lock{border-color:var(--or);box-shadow:0 0 40px rgba(255,92,0,.35)}
+.hud-cam.lock .reticle{width:22%;border-color:var(--or);border-width:2px}
+.hud-cam.lock .reticle i{animation-duration:1.2s;border-color:var(--or)}
+.scan{position:absolute;left:0;right:0;height:2px;background:var(--or);box-shadow:0 0 14px var(--or);opacity:.6;animation:scan 2.6s ease-in-out infinite alternate}
+.hud-cam.seized .scan,.hud-cam.seized .reticle{display:none}
+.hud-txt{position:absolute;font-family:var(--f-mono);font-size:clamp(10px,calc(var(--u)*.75),16px);letter-spacing:.1em;color:var(--or);text-shadow:0 0 6px rgba(0,0,0,.9);font-variant-numeric:tabular-nums;white-space:pre;line-height:1.5}
+.ht1{top:16px;left:calc(var(--u)*3.6)}.ht2{top:16px;right:calc(var(--u)*3.6);text-align:right}
+.ht3{bottom:16px;left:calc(var(--u)*3.6)}.ht4{bottom:16px;right:calc(var(--u)*3.6);text-align:right}
+.seizetag{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-6deg);font-family:var(--f-disp);font-weight:900;font-size:clamp(28px,calc(var(--u)*4.4),90px);color:#000;background:var(--or);padding:.05em .5em;letter-spacing:.08em;opacity:0;white-space:nowrap}
+.hud-cam.seized .seizetag{animation:pop .45s cubic-bezier(.2,1.5,.4,1) both .1s}
+.nocam{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:0 14%;color:var(--mute);font-size:clamp(13px,calc(var(--u)*1),22px)}
+.camnote{display:flex;justify-content:space-between;gap:12px;font-size:clamp(12px,calc(var(--u)*.8),17px)}
+.camnote b{font-family:var(--f-disp);font-weight:900;color:var(--fg)}
+
+/* 競売台 */
+.stage{display:flex;flex-direction:column;gap:calc(var(--u)*1.3);min-width:0;min-height:0;max-height:100%;justify-content:center;animation:in .45s ease both}
+@keyframes in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.idle-h{font-family:var(--f-disp);font-weight:900;font-size:clamp(26px,calc(var(--u)*3.3),70px);line-height:1.35;margin:0;text-wrap:balance}
+.idle-h em{font-style:normal;color:var(--or)}
+.idle-sub{margin:0;color:var(--mute);font-size:clamp(14px,calc(var(--u)*1.2),26px);max-width:30em}
+.venue{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:calc(var(--u)*.8) 0}
+.venue dt{font-family:var(--f-mono);font-size:clamp(10px,calc(var(--u)*.7),15px);color:var(--mute);letter-spacing:.12em;padding-top:.3em}
+.venue dd{margin:0;font-size:clamp(14px,calc(var(--u)*1.1),24px)}
+.venue dd b{font-family:var(--f-disp);font-weight:900}
+
+.lothead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.item{font-family:var(--f-disp);font-weight:900;font-size:clamp(26px,calc(var(--u)*3.4),72px);line-height:1.3;margin:0;text-wrap:balance}
+.appr{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*1.2);align-items:start;border-left:3px solid var(--or);padding-left:calc(var(--u)*1.2)}
+.appr p{margin:0;font-size:clamp(14px,calc(var(--u)*1.15),24px)}
+.thumb{width:clamp(56px,calc(var(--u)*6),130px);aspect-ratio:1;background:var(--or);overflow:hidden;flex:none}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(1) contrast(1.15);mix-blend-mode:multiply}
+.price{display:flex;align-items:baseline;gap:.3em;border-top:2px solid var(--or);padding-top:calc(var(--u)*.6)}
+.price b{font-family:var(--f-mono);font-weight:700;font-size:clamp(44px,calc(var(--u)*6.8),150px);line-height:1;color:var(--or);font-variant-numeric:tabular-nums;text-shadow:0 0 24px rgba(255,92,0,.35)}
+.price span{font-family:var(--f-disp);font-weight:900;font-size:clamp(18px,calc(var(--u)*2),44px);color:var(--or)}
+.price small{margin-left:auto;font-family:var(--f-mono);font-size:clamp(10px,calc(var(--u)*.72),16px);color:var(--mute);letter-spacing:.12em}
+.feed{display:flex;flex-direction:column;gap:calc(var(--u)*.5);min-height:0}
+.bid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 16px;border-top:1px solid var(--line);padding-top:calc(var(--u)*.5);animation:in .35s ease both}
+.bid .who{font-family:var(--f-mono);font-size:clamp(10px,calc(var(--u)*.75),16px);letter-spacing:.1em;color:var(--mute)}
+.bid .say{font-family:var(--f-disp);font-weight:700;font-size:clamp(15px,calc(var(--u)*1.45),32px);line-height:1.5;grid-column:1}
+.bid .amt{grid-row:1/3;grid-column:2;align-self:center;font-family:var(--f-mono);font-weight:700;font-size:clamp(14px,calc(var(--u)*1.3),28px);color:var(--fg);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bid.top .amt{color:var(--or)}
+.bid.top .who{color:var(--or)}
+.bid.out .amt{color:var(--mute)}
+.bid.old{opacity:.45}
+.typing{font-family:var(--f-disp);font-weight:700;font-size:clamp(18px,calc(var(--u)*2),42px);line-height:1.6;margin:0;min-height:3.2em}
+.cur{display:inline-block;width:.5em;height:1em;background:var(--or);vertical-align:-.12em;margin-left:2px;animation:blink 1s steps(2) infinite}
+
+/* 落札証明書 */
+.cert{border:2px solid var(--or);padding:calc(var(--u)*1.4) calc(var(--u)*1.6);display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*1) calc(var(--u)*1.8);position:relative;animation:pop .45s cubic-bezier(.2,1.5,.4,1) both}
+.cert .chead{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:calc(var(--u)*.6)}
+.cert .ctitle{font-family:var(--f-disp);font-weight:900;font-size:clamp(16px,calc(var(--u)*1.5),32px)}
+.cert .cph{position:relative;overflow:visible!important;width:clamp(110px,calc(var(--u)*14),300px);aspect-ratio:1;background:var(--or);overflow:hidden}
+.cert .cph img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(1) contrast(1.15);mix-blend-mode:multiply}
+.cert dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*.4) 14px;align-content:start}
+.cert dt{font-family:var(--f-mono);font-size:clamp(10px,calc(var(--u)*.7),15px);color:var(--mute);letter-spacing:.12em;padding-top:.35em}
+.cert dd{margin:0;font-size:clamp(14px,calc(var(--u)*1.15),24px)}
+.cert dd.p{font-family:var(--f-mono);font-weight:700;font-size:clamp(22px,calc(var(--u)*2.6),56px);line-height:1.1;color:var(--or)}
+.cert .cq{grid-column:1/-1;margin:0;font-family:var(--f-disp);font-weight:700;font-size:clamp(17px,calc(var(--u)*1.7),36px);line-height:1.6;white-space:pre-line;border-left:3px solid var(--or);padding-left:calc(var(--u)*1.2)}
+.cert .cfoot{grid-column:1/-1;display:flex;justify-content:space-between;align-items:end;gap:16px;border-top:2px solid var(--or);padding-top:calc(var(--u)*.8)}
+.cert .tagline{font-family:var(--f-disp);font-weight:900;font-size:clamp(16px,calc(var(--u)*1.6),34px);color:var(--or);line-height:1.4}
+.qr{background:#fff;padding:4px;width:clamp(64px,calc(var(--u)*6.5),140px);aspect-ratio:1;flex:none}
+.qr img,.qr canvas{width:100%!important;height:100%!important;display:block}
+.stamp{position:absolute;right:-.3em;bottom:.4em;font-family:var(--f-disp);font-weight:900;font-size:clamp(26px,calc(var(--u)*3.4),70px);color:var(--or);border:3px solid var(--or);padding:0 .35em;transform:rotate(-8deg);animation:stampin .45s cubic-bezier(.2,1.6,.4,1) both .5s;background:var(--bk)}
+@keyframes stampin{from{opacity:0;transform:rotate(-8deg) scale(1.9)}to{opacity:1;transform:rotate(-8deg) scale(1)}}
+.bar{height:3px;background:var(--line);position:relative;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--or);width:100%;transform-origin:left}
+
+/* 落札記録 */
+.logrow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;border-top:1px solid var(--line);padding-top:calc(var(--u)*.7)}
+.loglist{display:flex;gap:8px;overflow:hidden;min-height:calc(var(--u)*5.6)}
+.li{flex:0 0 auto;display:grid;grid-template-columns:auto auto;gap:0 8px;align-items:center;animation:in .4s ease both}
+.li .t{width:calc(var(--u)*5.2);min-width:44px;aspect-ratio:1;background:var(--or);overflow:hidden}
+.li .t img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(1) contrast(1.15);mix-blend-mode:multiply}
+.li .m{display:flex;flex-direction:column;line-height:1.35;font-size:clamp(10px,calc(var(--u)*.72),15px);max-width:11em}
+.li .m b{font-family:var(--f-mono);color:var(--or);font-variant-numeric:tabular-nums}
+.li .m span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logempty{color:var(--mute);font-size:clamp(11px,calc(var(--u)*.8),17px);align-self:center}
+
+.btn{font-family:var(--f-disp);font-weight:900;font-size:clamp(16px,calc(var(--u)*1.3),28px);border:0;cursor:pointer;padding:.7em 1.3em;background:var(--or);color:#000}
+
+/* 背景・HUD・グリッチ */
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.hud{position:fixed;z-index:0;pointer-events:none;font-family:var(--f-mono);font-size:clamp(10px,calc(var(--u)*.62),14px);line-height:1.6;letter-spacing:.08em;color:var(--or);opacity:.4;font-variant-numeric:tabular-nums;white-space:pre}
+.hud.r{right:max(12px,env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);text-align:right;writing-mode:vertical-rl;opacity:.25}
+.flash{position:fixed;inset:0;background:#fff;pointer-events:none;z-index:50;animation:fl .7s ease-out forwards}
+@keyframes fl{0%{opacity:1}20%{opacity:.9;background:#ff5c00}100%{opacity:0;background:#ff5c00}}
+.static{position:fixed;inset:0;z-index:40;pointer-events:none;opacity:0;
+  background:repeating-linear-gradient(0deg,rgba(255,92,0,.10) 0 1px,transparent 1px 3px),repeating-linear-gradient(0deg,transparent 0 37%,rgba(241,241,241,.08) 37% 39%,transparent 39% 71%,rgba(255,92,0,.12) 71% 72%,transparent 72%)}
+.static.on{animation:st .3s steps(3) both}
+@keyframes st{0%{opacity:1;background-position:0 0}33%{opacity:.7;background-position:0 23px}66%{opacity:1;background-position:0 -41px}100%{opacity:0}}
+.gl{animation:glt .38s steps(1) both}
+@keyframes glt{
+  0%{transform:translate(0);text-shadow:none;clip-path:none}
+  15%{transform:translate(-3px,0);text-shadow:2px 0 rgba(255,40,0,.85),-2px 0 rgba(0,229,255,.7);clip-path:inset(10% 0 55% 0)}
+  30%{transform:translate(4px,1px);text-shadow:-3px 0 rgba(255,40,0,.85),3px 0 rgba(0,229,255,.7);clip-path:inset(48% 0 12% 0)}
+  45%{transform:translate(-1px,0);clip-path:none;opacity:.55}
+  60%{transform:translate(2px,-1px);clip-path:inset(0 0 70% 0);opacity:1}
+  100%{transform:none;text-shadow:none;clip-path:none;opacity:1}}
+.wrap.pg{animation:pg .32s steps(1) both}
+@keyframes pg{0%{transform:none}20%{transform:translate(-6px,0) skewX(-2deg)}40%{transform:translate(5px,2px);filter:contrast(1.4)}60%{transform:translate(-2px,-1px);opacity:.8}80%{transform:translate(3px,0)}100%{transform:none;filter:none;opacity:1}}
+@keyframes pop{from{opacity:0;transform:scale(1.5) rotate(-4deg)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes scan{from{top:8%}to{top:92%}}
+@keyframes blink{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}.flash{display:none}}
+
+/* 縦長・狭い画面（スマホ確認用） */
+@media (max-aspect-ratio:1/1){
+  body{overflow:auto}
+  .wrap{height:auto;min-height:100dvh}
+  main{grid-template-columns:minmax(0,1fr)}
+  .hud-cam{height:auto;width:100%}
+  .hud.r{display:none}
+}
+</style>
+<script src="config.js"></script>
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="hud r" id="hudR" aria-hidden="true"></div>
+<div class="static" id="static" aria-hidden="true"></div>
+<div class="wrap" id="wrap">
+  <header>
+    <div class="logo">異界オークション<em>.</em></div>
+    <div class="hr">
+      <div class="lbl alert" id="mode">● LIVE · 監視中</div>
+      <div class="lbl mute" id="lotno">LOT ----</div>
+      <button class="snd" id="snd" aria-pressed="false">SOUND OFF</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="camcol">
+      <div class="hud-cam" id="cam">
+        <video id="v" autoplay playsinline muted></video>
+        <canvas class="freeze" id="freeze"></canvas>
+        <div class="orwash"></div>
+        <div class="tint"></div>
+        <i class="br b1"></i><i class="br b2"></i><i class="br b3"></i><i class="br b4"></i>
+        <div class="reticle"><i></i></div>
+        <div class="scan"></div>
+        <div class="hud-txt ht1" id="ht1">REC ●</div>
+        <div class="hud-txt ht2" id="ht2"></div>
+        <div class="hud-txt ht3" id="ht3"></div>
+        <div class="hud-txt ht4" id="ht4"></div>
+        <div class="seizetag">強制出品</div>
+        <div class="nocam" id="nocam" hidden></div>
+      </div>
+      <div class="camnote"><span>このカメラの前にある物は、<b>予告なく出品されます。</b></span><span class="mute">人物は鑑定対象外</span></div>
+    </div>
+    <section class="stage" id="stage" aria-live="polite"></section>
+  </main>
+
+  <div class="logrow">
+    <div class="lbl">落札記録</div>
+    <div class="loglist" id="loglist"><span class="logempty">まだ何も出品されていません。そのうち、あなたの物が出品されます。</span></div>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const CFG=Object.assign({minSec:8,maxSec:28,lockSec:3,certSec:14,qrUrl:""},window.AUCTION||{});
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const fmt=n=>Math.round(Number(n)||0).toLocaleString("ja-JP");
+function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+/* 競売が開かれる異界（GAS側にも同じ設定がある） */
+const CITIES={
+  sea:{name:"海上都市ネオ・ワダツミ",year:"2126",unit:"塩",coord:"LAT 35.40 N / LON 139.80 E / 海抜 -12m",rule:"真水と乾いた物が最も尊い",
+    residents:["潮守のばあさん","漂着物コレクターの少年","海藻商人","都市の考古学者"]},
+  moon:{name:"月面都市セレネ第三区",year:"2088",unit:"錨貨",coord:"MARE TRANQUILLITATIS / 1/6 G",rule:"重い物ほど錨として価値がある",
+    residents:["浮遊症の配管工","重量信仰の神官","軽量化マニアの技師","地球史の講師"]},
+  silent:{name:"静寂都市ミナモ",year:"2201",unit:"沈黙",coord:"SECTOR 0dB / 発声禁止区域",rule:"声を出すことは違法",
+    residents:["筆談代書屋","音の密売人","静寂警備隊長","古代言語学者"]},
+  cyber:{name:"電脳都市ゼロ・レイヤー",year:"2310",unit:"実体",coord:"LAYER 0 / 物理残存率 0.03%",rule:"触れる物体は異常に珍しい",
+    residents:["実体フェチの富豪","データ消去局の役人","アナログ復興派の若者","物理考古学者"]}
+};
+const CITY_KEYS=Object.keys(CITIES);
+
+/* GAS未設定時の模擬鑑定（写真の中身は読めないので「正体不明の遺物」として競る） */
+const MOCK={
+  sea:[{item:"陸時代の正体不明の遺物",era:"陸時代",appraisal:"考古学者いわく『陸の民はこれを毎朝なでて、水の神の機嫌をとった』。",
+    bids:[["漂着物コレクターの少年","陸の時代の遺物だ！ ぼくの貯金ぜんぶ、3,000塩！",3000],["海藻商人","錆びないなら浮きになる。8,000塩。",8000],["都市の考古学者","祭祀具の可能性があります。学術保護で15,000塩。",15000],["潮守のばあさん","乾いてるじゃないか。乾いてる物は全部ほしい。26,000塩！",26000],["海藻商人","……降りる。ばあさんには勝てない。",26000]],
+    winner:"潮守のばあさん",use:"雨季のあいだ、湿気よけのお守りとして寝床の上に吊るす。",quote:"三十年ぶりに、\n乾いた物を手でさわった。\n陸の人はこんな贅沢を毎日していたのか"}],
+  moon:[{item:"地球時代の正体不明の遺物",era:"地球時代",appraisal:"講師いわく『地球人はこれを持つことで、自分が飛ばないことを確かめていた』。",
+    bids:[["軽量化マニアの技師","重い。処分費込みで100錨貨なら引き取る。",100],["浮遊症の配管工","重さがあるなら何でもいい！ 2,400錨貨！",2400],["重量信仰の神官","この重み、徳が宿っている。6,000錨貨。",6000],["浮遊症の配管工","給料2か月分……7,200錨貨！",7200]],
+    winner:"浮遊症の配管工",use:"作業ベルトに吊るし、配管工事中に天井まで浮かないための錨にする。",quote:"持った瞬間、\n足が床に戻ってきた。\n地球の人はみんな飛ばずに済んでいたのか"}],
+  silent:[{item:"声の時代の正体不明の遺物",era:"声の時代",appraisal:"言語学者いわく『声の時代の人々は、沈黙を保つためにこれを握りしめていた』。",
+    bids:[["筆談代書屋","（筆談）何か書けそうな形だ。40沈黙。",40],["音の密売人","（身振り）振ったら音が鳴るかもしれない。120沈黙。",120],["静寂警備隊長","（筆談）音が出る疑いあり。没収のため260沈黙。",260],["音の密売人","（震える手で）……300沈黙。",300]],
+    winner:"音の密売人",use:"地下の闇市で、1回だけ振って音を聴かせる見世物にする。",quote:"振ったら、\nかすかに音がした。\n声の時代の人はこんな危険物を持ち歩いていたのか"}],
+  cyber:[{item:"物理時代の正体不明の遺物",era:"物理時代",appraisal:"考古学者いわく『物理時代の人は、これに触れることでログインしていた』。",
+    bids:[["アナログ復興派の若者","触れる！ 本物だ！ 200実体！",200],["データ消去局の役人","バックアップの取れない物体は危険です。回収のため900実体。",900],["実体フェチの富豪","重さ。温度。手ざわり。すべてが完璧だ。2,000実体。",2000],["データ消去局の役人","……局の予算を超えました。降ります。",2000]],
+    winner:"実体フェチの富豪",use:"屋敷の真ん中に置き、毎朝10分だけ素手で触れる時間をつくる。",quote:"コピーも、削除もできない。\nたった一つしかない。\n物理時代の人はこんな孤独な物に囲まれていたのか"}]
+};
+
+/* ===== 状態 ===== */
+const S={phase:"boot",stream:null,city:pick(CITY_KEYS),nextAt:0,lot:1,timer:null,busy:false};
+try{S.lot=Number(localStorage.getItem("ikai_lot")||"1")||1}catch{}
+const stage=$("#stage"),cam=$("#cam"),video=$("#v"),freeze=$("#freeze");
+function setLot(){$("#lotno").textContent="LOT "+String(S.lot).padStart(4,"0")}
+function setMode(t){$("#mode").textContent=t}
+function glitch(el){if(!el)return;el.classList.remove("gl");void el.offsetWidth;el.classList.add("gl")}
+function pageGlitch(){const w=$("#wrap"),st=$("#static");w.classList.remove("pg");st.classList.remove("on");void w.offsetWidth;w.classList.add("pg");st.classList.add("on");SND.static()}
+
+/* ===== カメラ：ページを開いた瞬間に起動 ===== */
+async function startCam(){
+  const nc=$("#nocam");nc.hidden=true;
+  if(!navigator.mediaDevices?.getUserMedia){nc.hidden=false;nc.innerHTML="このブラウザではカメラを使えません。<br>HTTPS（GitHub Pages など）で開いてください。";return false}
+  try{
+    S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment",width:{ideal:1280},height:{ideal:960}},audio:false});
+    video.srcObject=S.stream;await video.play().catch(()=>{});
+    return true;
+  }catch(e){
+    nc.hidden=false;
+    nc.innerHTML=`<div>カメラの使用が許可されていません。</div><div>ブラウザのアドレスバーからカメラを許可してください。</div><button class="btn" id="retry">もう一度つなぐ</button>`;
+    $("#retry").onclick=async()=>{if(await startCam())idle()};
+    return false;
+  }
+}
+
+/* ===== 待機：監視しながら、勝手にシャッターを切る ===== */
+function idle(){
+  S.phase="watch";S.busy=false;
+  cam.classList.remove("seized","lock");
+  S.city=pick(CITY_KEYS.filter(k=>k!==S.city));
+  const c=CITIES[S.city];
+  setMode("● LIVE · 監視中");
+  stage.innerHTML=`<div class="lbl" id="sLbl">NEXT AUCTION · ${esc(c.year)}</div>
+    <h1 class="idle-h" id="sH">あなたの持ち物は、<br>まもなく<em>${esc(c.name)}</em>で<br>競りにかけられます。</h1>
+    <dl class="venue">
+      <dt>会場</dt><dd><b>${esc(c.name)}</b>（${esc(c.year)}年）</dd>
+      <dt>常識</dt><dd>${esc(c.rule)}</dd>
+      <dt>通貨</dt><dd>${esc(c.unit)}</dd>
+      <dt>入札者</dt><dd>${c.residents.map(esc).join("、")}</dd>
+    </dl>
+    <p class="idle-sub">出品の合図はありません。このカメラは、勝手にシャッターを切ります。</p>`;
+  restartAnim();
+  glitch($("#sH"));
+  schedule();
+}
+function restartAnim(){stage.style.animation="none";void stage.offsetHeight;stage.style.animation=""}
+function schedule(){
+  clearTimeout(S.timer);
+  const wait=rnd(CFG.minSec,CFG.maxSec)*1000;
+  S.nextAt=performance.now()+wait;
+  S.timer=setTimeout(lockOn,Math.max(0,wait-CFG.lockSec*1000));
+}
+async function lockOn(){
+  if(S.phase!=="watch"||!S.stream)return schedule();
+  S.phase="lock";cam.classList.add("lock");setMode("◎ TARGET LOCK");
+  for(let i=0;i<CFG.lockSec;i++){SND.beep(i);await sleep(1000)}
+  shoot();
+}
+
+/* ===== シャッター → 強制出品 ===== */
+async function shoot(){
+  if(S.busy)return;S.busy=true;clearTimeout(S.timer);
+  const vw=video.videoWidth,vh=video.videoHeight;
+  if(!vw){S.busy=false;S.phase="watch";cam.classList.remove("lock");return schedule()}
+  const w=960,h=Math.round(w*vh/vw);
+  freeze.width=w;freeze.height=h;const fx=freeze.getContext("2d");fx.drawImage(video,0,0,w,h);
+  // 真っ暗（レンズがふさがれている）なら見送る
+  const px=fx.getImageData(0,0,w,h).data;let sum=0;for(let i=0;i<px.length;i+=4*97)sum+=px[i]+px[i+1]+px[i+2];
+  if(sum/(px.length/(4*97))/3<14){S.busy=false;S.phase="watch";cam.classList.remove("lock");return schedule()}
+  const jpeg=freeze.toDataURL("image/jpeg",.82);
+  const thumb=square(freeze,360);
+  S.phase="seized";cam.classList.remove("lock");cam.classList.add("seized");
+  const f=document.createElement("div");f.className="flash";document.body.append(f);setTimeout(()=>f.remove(),800);
+  SND.shutter();setMode("■ SEIZED · 出品手続き中");
+  await sleep(700);pageGlitch();
+  await runAuction(jpeg.split(",")[1],thumb);
+}
+function square(src,size){const s=Math.min(src.width,src.height);const c=document.createElement("canvas");c.width=c.height=size;c.getContext("2d").drawImage(src,(src.width-s)/2,(src.height-s)/2,s,s,0,0,size,size);return c.toDataURL("image/jpeg",.75)}
+
+/* ===== 鑑定（GAS経由でClaude、なければ模擬） ===== */
+async function appraise(image){
+  if(window.GAS_URL){
+    const r=await fetch(window.GAS_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({mode:"auction",city:S.city,image})});
+    const d=await r.json();
+    if(!d.ok)throw new Error(d.error||"server_error");
+    return normalize(d.result);
+  }
+  await sleep(rnd(2500,4500));
+  const m=structuredClone(pick(MOCK[S.city]));
+  return normalize({...m,bids:m.bids.map(([who,line,price])=>({who,line,price}))});
+}
+function normalize(d){
+  if(!d||!Array.isArray(d.bids)||!d.bids.length)throw new Error("invalid");
+  let last=0;
+  d.bids=d.bids.slice(0,7).map(b=>{const p=Math.max(last,Number(b.price)||0);const out=p===last&&last>0;last=p;return{who:String(b.who||"住人"),line:String(b.line||""),price:p,out}});
+  d.price=Number(d.price)||last;if(d.price<last)d.price=last;
+  d.winner=String(d.winner||[...d.bids].reverse().find(b=>!b.out)?.who||d.bids[0].who);
+  for(const k of["item","era","appraisal","use","quote"])d[k]=String(d[k]||"");
+  return d;
+}
+
+async function runAuction(image,thumb){
+  const c=CITIES[S.city];
+  const lot=String(S.lot).padStart(4,"0");
+  S.phase="appraise";
+  stage.innerHTML=`<div class="lothead"><div class="lbl alert">LOT ${lot} · 強制出品</div><div class="lbl mute">${esc(c.name)} / ${esc(c.year)}</div></div>
+    <div class="appr"><div class="thumb"><img alt="" src="${thumb}"></div><p class="typing" id="typ"><span class="cur"></span></p></div>`;
+  restartAnim();
+  const lines=[`出品者の同意を確認……省略。`,`${c.year}年の${c.name}へ転送中。`,`住人たちが鑑定しています。`];
+  let alive=true;
+  const typer=(async()=>{const el=$("#typ");let done="";
+    for(const t of lines){for(let i=1;i<=t.length&&alive;i++){el.innerHTML=done+esc(t.slice(0,i))+'<span class="cur"></span>';if(i%2)SND.type();await sleep("。、…".includes(t[i-1])?260:55)}done+=esc(t)+"<br>";if(!alive)return;await sleep(500)}})();
+  let d;
+  try{d=await appraise(image)}
+  catch(e){alive=false;await typer;return failed(e)}
+  alive=false;await typer;
+  S.phase="bidding";setMode("▲ BIDDING");
+  pageGlitch();
+  stage.innerHTML=`<div class="lothead"><div class="lbl">LOT ${lot} · ${esc(d.era)}</div><div class="lbl mute">${esc(c.name)}</div></div>
+    <h2 class="item" id="itm">${esc(d.item)}</h2>
+    <div class="appr"><div class="thumb"><img alt="" src="${thumb}"></div><p>${esc(d.appraisal)}</p></div>
+    <div class="price"><b id="pr">0</b><span>${esc(c.unit)}</span><small id="pc">入札 0件</small></div>
+    <div class="feed" id="feed"></div>`;
+  restartAnim();glitch($("#itm"));
+  await sleep(2200);
+  const feed=$("#feed");let prev=0;
+  for(const [i,b] of d.bids.entries()){
+    feed.querySelectorAll(".bid").forEach((x,j,all)=>{x.classList.remove("top");if(all.length-j>1)x.classList.add("old")});
+    const row=document.createElement("div");row.className="bid";
+    const up=b.price>prev&&!b.out;
+    row.classList.add(up?"top":"out");
+    row.innerHTML=`<span class="who">${esc(b.who)}</span><span class="say">${esc(b.line)}</span><span class="amt">${up?fmt(b.price)+" "+esc(c.unit):"降りる"}</span>`;
+    feed.append(row);
+    while(feed.children.length>3)feed.firstChild.remove();
+    $("#pc").textContent=`入札 ${i+1}件`;
+    if(up){tick($("#pr"),prev,b.price);prev=b.price;SND.bid(i)}else SND.out();
+    await sleep(rnd(2300,3000));
+  }
+  $("#pr").textContent=fmt(d.price);
+  SND.hammer();
+  await sleep(600);
+  sold(d,thumb,lot,c);
+}
+function tick(el,from,to){const t0=performance.now(),dur=650;const st=t=>{const k=Math.min(1,(t-t0)/dur);el.textContent=fmt(from+(to-from)*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(st)};requestAnimationFrame(st)}
+
+function sold(d,thumb,lot,c){
+  S.phase="sold";setMode("★ SOLD");
+  stage.innerHTML=`<div class="cert">
+      <div class="chead"><span class="ctitle">${esc(c.name)}　落札証明書</span><span class="lbl">LOT ${lot}</span></div>
+      <div class="cph"><img alt="" src="${thumb}"><div class="stamp">落札</div></div>
+      <dl>
+        <dt>出品物</dt><dd>${esc(d.item)}（${esc(d.era)}）</dd>
+        <dt>落札額</dt><dd class="p">${fmt(d.price)} ${esc(c.unit)}</dd>
+        <dt>落札者</dt><dd>${esc(d.winner)}</dd>
+        <dt>使い道</dt><dd>${esc(d.use)}</dd>
+      </dl>
+      <p class="cq">「${esc(d.quote.replace(/\\n/g,"\n"))}」</p>
+      <div class="cfoot"><div><div class="tagline">あなたの持ち物は、<br>別の世界では宝物かもしれない。</div><div class="lbl mute" style="margin-top:6px">MVMNT · YEP2026</div></div>${CFG.qrUrl?'<div class="qr" id="qr"></div>':""}</div>
+    </div>
+    <div class="bar"><i id="cbar"></i></div>`;
+  restartAnim();
+  if(CFG.qrUrl&&window.QRCode){try{new QRCode($("#qr"),{text:CFG.qrUrl,width:256,height:256,colorDark:"#000",colorLight:"#fff",correctLevel:QRCode.CorrectLevel.M})}catch{}}
+  setTimeout(()=>SND.stamp(),500);
+  const bar=$("#cbar");bar.animate([{transform:"scaleX(1)"},{transform:"scaleX(0)"}],{duration:CFG.certSec*1000,easing:"linear",fill:"forwards"});
+  addLog(thumb,d,c);
+  S.lot++;try{localStorage.setItem("ikai_lot",String(S.lot))}catch{}setLot();
+  setTimeout(()=>{pageGlitch();idle()},CFG.certSec*1000);
+}
+function addLog(thumb,d,c){
+  const L=$("#loglist");L.querySelector(".logempty")?.remove();
+  const li=document.createElement("div");li.className="li";
+  li.innerHTML=`<div class="t"><img alt="" src="${thumb}"></div><div class="m"><b>${fmt(d.price)} ${esc(c.unit)}</b><span>${esc(d.item)}</span><span class="mute">${esc(d.winner)}</span></div>`;
+  L.prepend(li);while(L.children.length>8)L.lastChild.remove();
+}
+async function failed(e){
+  console.warn(e);SND.error();setMode("× TRANSFER LOST");
+  stage.innerHTML=`<div class="lbl alert">TRANSFER LOST</div><h2 class="idle-h">異界との通信が<br>途切れました。</h2><p class="idle-sub">この出品は流れました。次の品をすぐに探します。</p>`;
+  restartAnim();
+  await sleep(5000);idle();
+}
+
+/* ===== カメラHUDの数字 ===== */
+(function hud(){
+  const t0=performance.now(),h2=$("#ht2"),h3=$("#ht3"),h4=$("#ht4"),hr=$("#hudR"),h1=$("#ht1");
+  function f(now){
+    const t=(now-t0)/1000,c=CITIES[S.city];
+    h1.textContent=`REC ${Math.floor(t*2)%2?"●":"○"}  CAM-01`;
+    h2.textContent=`${c.year}\n${c.unit}`;
+    h3.textContent=`T+${t.toFixed(2).padStart(8,"0")}\nSCAN ${(88+Math.sin(t*1.7)*9).toFixed(1)}%`;
+    let nx="";
+    if(S.phase==="watch"){const r=(S.nextAt-now)/1000;nx=r>CFG.lockSec+4?`NEXT ${"?".repeat(2+Math.floor(t*3)%3)}.?s`:`NEXT ${Math.max(0,r).toFixed(1)}s`}
+    else if(S.phase==="lock")nx=`LOCK ${Math.max(0,(S.nextAt-now)/1000).toFixed(1)}s`;
+    else nx=S.phase.toUpperCase();
+    h4.textContent=`${nx}\nOBJ ${S.phase==="watch"?"SEARCHING":"ACQUIRED"}`;
+    hr.textContent=`${c.coord}  ·  ${c.name}  ·  LOT ${String(S.lot).padStart(4,"0")}`;
+    requestAnimationFrame(f);
+  }
+  requestAnimationFrame(f);
+})();
+
+/* ===== 背景：計器の方眼＋走査線 ===== */
+(function(){
+  const cv=$("#bg"),ctx=cv.getContext("2d");
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let W,H;
+  function size(){const dpr=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
+  size();addEventListener("resize",size);
+  const G=48,t0=performance.now();
+  function frame(now){
+    const t=(now-t0)/1000;ctx.clearRect(0,0,W,H);ctx.lineWidth=1;
+    ctx.strokeStyle="rgba(255,92,0,.06)";ctx.beginPath();
+    for(let x=(W/2)%G;x<W;x+=G){ctx.moveTo(x+.5,0);ctx.lineTo(x+.5,H)}
+    for(let y=(H/2)%G;y<H;y+=G){ctx.moveTo(0,y+.5);ctx.lineTo(W,y+.5)}
+    ctx.stroke();
+    ctx.strokeStyle="rgba(255,92,0,.2)";ctx.beginPath();
+    for(let x=(W/2)%G;x<W;x+=G)for(let y=(H/2)%G;y<H;y+=G){ctx.moveTo(x-3,y+.5);ctx.lineTo(x+4,y+.5);ctx.moveTo(x+.5,y-3);ctx.lineTo(x+.5,y+4)}
+    ctx.stroke();
+    if(!reduce){
+      const sp=S.phase==="lock"?1.2:6;
+      const y=((t/sp)%1)*(H+160)-80;
+      const g=ctx.createLinearGradient(0,y-120,0,y);g.addColorStop(0,"rgba(255,92,0,0)");g.addColorStop(1,`rgba(255,92,0,${S.phase==="lock"?.18:.09})`);
+      ctx.fillStyle=g;ctx.fillRect(0,y-120,W,120);ctx.fillStyle="rgba(255,92,0,.5)";ctx.fillRect(0,y,W,1);
+      if((t%4)<.12){ctx.fillStyle="rgba(255,92,0,.06)";ctx.fillRect(0,(Math.sin(t*13)*.5+.5)*H,W,2+Math.random()*6)}
+      requestAnimationFrame(frame);
+    }
+  }
+  requestAnimationFrame(frame);
+})();
+
+/* ===== サウンド（Web Audioで合成） ===== */
+const SND=(()=>{
+  let ac=null,master=null,bgm=null,on=true,arp=null;
+  try{on=localStorage.getItem("ikai_sound")!=="off"}catch{}
+  const btn=$("#snd");
+  function ui(){btn.textContent=on?"SOUND ON":"SOUND OFF";btn.setAttribute("aria-pressed",on)}
+  function init(){
+    if(ac)return;ac=new (window.AudioContext||window.webkitAudioContext)();
+    master=ac.createGain();master.gain.value=.8;master.connect(ac.destination);
+    const dl=ac.createDelay(1),fb=ac.createGain(),wet=ac.createGain();dl.delayTime.value=.33;fb.gain.value=.35;wet.gain.value=.3;dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(master);
+    bgm=ac.createGain();bgm.gain.value=0;bgm.connect(master);bgm.connect(dl);
+    const fl=ac.createBiquadFilter();fl.type="lowpass";fl.frequency.value=420;fl.Q.value=6;
+    const lfo=ac.createOscillator(),lg=ac.createGain();lfo.frequency.value=.07;lg.gain.value=260;lfo.connect(lg);lg.connect(fl.frequency);lfo.start();
+    const g=ac.createGain();g.gain.value=.15;fl.connect(g);g.connect(bgm);
+    [[55,"sawtooth"],[82.5,"sawtooth"],[110.4,"triangle"]].forEach(([f,t],i)=>{const o=ac.createOscillator();o.type=t;o.frequency.value=f;o.detune.value=(i-1)*6;o.connect(fl);o.start()});
+    const N=[220,261.6,293.7,329.6,392,440,523.3];let k=0;
+    arp=setInterval(()=>{if(!on||Math.random()<.35)return;tone(N[(k*3+Math.floor(Math.random()*3))%N.length]*(Math.random()<.2?2:1),1.6,{type:"triangle",vol:.045,bus:bgm});k++},700);
+  }
+  function tone(freq,dur,{type="sine",vol=.3,at=0,slide=0,bus=master}={}){
+    if(!ac||!on)return;const t=ac.currentTime+at,o=ac.createOscillator(),g=ac.createGain();
+    o.type=type;o.frequency.setValueAtTime(freq,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+dur);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g);g.connect(bus);o.start(t);o.stop(t+dur+.05);
+  }
+  function noise(dur,{vol=.3,f=2000,q=1,type="bandpass",at=0}={}){
+    if(!ac||!on)return;const t=ac.currentTime+at,b=ac.createBuffer(1,ac.sampleRate*(dur+.1),ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const n=ac.createBufferSource(),fl=ac.createBiquadFilter(),g=ac.createGain();n.buffer=b;fl.type=type;fl.frequency.value=f;fl.Q.value=q;
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);n.connect(fl);fl.connect(g);g.connect(master);n.start(t);n.stop(t+dur+.05);
+  }
+  function start(){init();ac.resume();bgm.gain.setTargetAtTime(on?1:0,ac.currentTime,1.2)}
+  btn.onclick=()=>{on=!on;try{localStorage.setItem("ikai_sound",on?"on":"off")}catch{}ui();if(on)start();else if(ac)bgm.gain.setTargetAtTime(0,ac.currentTime,.2)};
+  ui();
+  // 音はブラウザの仕様上、最初の操作のあとに鳴る（会場ではスタッフが一度画面に触れる）
+  addEventListener("pointerdown",()=>{if(on)start()},{once:true});
+  addEventListener("keydown",()=>{if(on)start()},{once:true});
+  return{
+    beep(i){tone(1320+i*220,.12,{type:"square",vol:.07})},
+    shutter(){noise(.14,{vol:.55,f:3000,q:.7,type:"highpass"});tone(1600,.05,{type:"square",vol:.12});tone(110,.6,{vol:.2,slide:55,at:.05})},
+    static(){noise(.22,{vol:.06,f:2600,q:.6});tone(60,.15,{type:"square",vol:.03})},
+    type(){tone(1700+Math.random()*500,.025,{type:"square",vol:.012})},
+    bid(i){tone(660+i*60,.12,{type:"triangle",vol:.08});tone(990+i*90,.18,{type:"triangle",vol:.06,at:.08})},
+    out(){tone(392,.3,{type:"triangle",vol:.06,slide:330})},
+    hammer(){tone(90,.3,{vol:.55,slide:45});noise(.12,{vol:.45,f:900,q:.8});tone(90,.3,{vol:.45,slide:45,at:.32});noise(.12,{vol:.35,f:900,q:.8,at:.32})},
+    stamp(){[523.3,659.3,784,1046.5].forEach((f,i)=>tone(f,.5,{type:"triangle",vol:.08,at:i*.1}))},
+    error(){tone(330,.25,{type:"sawtooth",vol:.1,slide:165});tone(220,.4,{type:"sawtooth",vol:.1,at:.22,slide:110})}
+  };
+})();
+
+/* スタッフ用キー：Space＝今すぐ撮る、F＝全画面 */
+addEventListener("keydown",e=>{
+  if(e.code==="Space"&&S.phase==="watch"){e.preventDefault();clearTimeout(S.timer);S.nextAt=performance.now()+CFG.lockSec*1000;lockOn()}
+  if(e.key==="f"||e.key==="F"){document.fullscreenElement?document.exitFullscreen?.():document.documentElement.requestFullscreen?.().catch(()=>{})}
+});
+
+/* 起動：ページを開いた瞬間からカメラが回る */
+(async()=>{
+  setLot();
+  stage.innerHTML=`<div class="lbl alert">BOOT · CAM-01</div><h1 class="idle-h">監視カメラを<br><em>起動しています。</em></h1>`;
+  if(await startCam())idle();
+  else stage.innerHTML=`<div class="lbl alert">NO SIGNAL</div><h1 class="idle-h">カメラが<br>見つかりません。</h1><p class="idle-sub">左の画面からカメラを許可すると、競売が始まります。</p>`;
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+</body>
+</html>
