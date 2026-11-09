@@ -83,24 +83,32 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
 .venue dd b{font-family:var(--f-disp);font-weight:900}
 
 .lothead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
-.item{font-family:var(--f-disp);font-weight:900;font-size:clamp(26px,calc(var(--u)*3.4),72px);line-height:1.3;margin:0;text-wrap:balance}
+.item{font-family:var(--f-disp);font-weight:900;font-size:clamp(24px,calc(var(--u)*2.8),60px);line-height:1.3;margin:0;text-wrap:balance}
 .appr{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*1.2);align-items:start;border-left:3px solid var(--or);padding-left:calc(var(--u)*1.2)}
 .appr p{margin:0;font-size:clamp(14px,calc(var(--u)*1.15),24px)}
 .thumb{width:clamp(56px,calc(var(--u)*6),130px);aspect-ratio:1;background:var(--or);overflow:hidden;flex:none}
 .thumb img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(1) contrast(1.15);mix-blend-mode:multiply}
 .price{display:flex;align-items:baseline;gap:.3em;border-top:2px solid var(--or);padding-top:calc(var(--u)*.6)}
-.price b{font-family:var(--f-mono);font-weight:700;font-size:clamp(44px,calc(var(--u)*6.8),150px);line-height:1;color:var(--or);font-variant-numeric:tabular-nums;text-shadow:0 0 24px rgba(255,92,0,.35)}
+.price b{font-family:var(--f-mono);font-weight:700;font-size:clamp(40px,calc(var(--u)*5.4),120px);line-height:1;color:var(--or);font-variant-numeric:tabular-nums;text-shadow:0 0 24px rgba(255,92,0,.35)}
 .price span{font-family:var(--f-disp);font-weight:900;font-size:clamp(18px,calc(var(--u)*2),44px);color:var(--or)}
 .price small{margin-left:auto;font-family:var(--f-mono);font-size:clamp(10px,calc(var(--u)*.72),16px);color:var(--mute);letter-spacing:.12em}
 .feed{display:flex;flex-direction:column;gap:calc(var(--u)*.5);min-height:0}
-.bid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 16px;border-top:1px solid var(--line);padding-top:calc(var(--u)*.5);animation:in .35s ease both}
-.bid .who{font-family:var(--f-mono);font-size:clamp(10px,calc(var(--u)*.75),16px);letter-spacing:.1em;color:var(--mute)}
-.bid .say{font-family:var(--f-disp);font-weight:700;font-size:clamp(15px,calc(var(--u)*1.45),32px);line-height:1.5;grid-column:1}
-.bid .amt{grid-row:1/3;grid-column:2;align-self:center;font-family:var(--f-mono);font-weight:700;font-size:clamp(14px,calc(var(--u)*1.3),28px);color:var(--fg);font-variant-numeric:tabular-nums;white-space:nowrap}
-.bid.top .amt{color:var(--or)}
-.bid.top .who{color:var(--or)}
-.bid.out .amt{color:var(--mute)}
-.bid.old{opacity:.45}
+/* 入札者と、いま話している人 */
+.bidders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:calc(var(--u)*.8)}
+.bdr{border:1px solid var(--line);padding:calc(var(--u)*.6) calc(var(--u)*.8);display:flex;flex-direction:column;gap:2px;min-width:0;transition:border-color .25s,background .25s,opacity .25s}
+.bdr b{font-family:var(--f-disp);font-weight:900;font-size:clamp(13px,calc(var(--u)*1.15),26px);line-height:1.35}
+.bdr span{font-size:clamp(11px,calc(var(--u)*.8),17px);color:var(--mute);line-height:1.4}
+.bdr em{font-style:normal;font-family:var(--f-mono);font-weight:700;font-size:clamp(12px,calc(var(--u)*1),22px);color:var(--fg);font-variant-numeric:tabular-nums;min-height:1.4em}
+.bdr.now{border-color:var(--or);background:rgba(255,92,0,.1)}
+.bdr.now b,.bdr.now em{color:var(--or)}
+.bdr.lead em::after{content:"  最高値";font-size:.7em;color:var(--or);letter-spacing:.1em}
+.bdr.gone{opacity:.35}
+.bdr.gone em::after{content:"  降りた";font-size:.7em;letter-spacing:.1em}
+.speech{border-left:4px solid var(--or);padding:calc(var(--u)*.4) 0 calc(var(--u)*.4) calc(var(--u)*1.4);min-height:calc(var(--u)*7.5);display:flex;flex-direction:column;justify-content:center;gap:4px}
+.speech .who{font-family:var(--f-disp);font-weight:900;font-size:clamp(13px,calc(var(--u)*1.1),24px);color:var(--or)}
+.speech .say{font-family:var(--f-disp);font-weight:900;font-size:clamp(22px,calc(var(--u)*2.6),56px);line-height:1.4;margin:0;text-wrap:balance}
+.speech.pop{animation:in .3s ease both}
+.speech.out .say{color:var(--mute)}
 .typing{font-family:var(--f-disp);font-weight:700;font-size:clamp(18px,calc(var(--u)*2),42px);line-height:1.6;margin:0;min-height:3.2em}
 .cur{display:inline-block;width:.5em;height:1em;background:var(--or);vertical-align:-.12em;margin-left:2px;animation:blink 1s steps(2) infinite}
 
@@ -114,7 +122,7 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
 .cert dt{font-family:var(--f-mono);font-size:clamp(10px,calc(var(--u)*.7),15px);color:var(--mute);letter-spacing:.12em;padding-top:.35em}
 .cert dd{margin:0;font-size:clamp(14px,calc(var(--u)*1.15),24px)}
 .cert dd.p{font-family:var(--f-mono);font-weight:700;font-size:clamp(22px,calc(var(--u)*2.6),56px);line-height:1.1;color:var(--or)}
-.cert .cq{grid-column:1/-1;margin:0;font-family:var(--f-disp);font-weight:700;font-size:clamp(17px,calc(var(--u)*1.7),36px);line-height:1.6;white-space:pre-line;border-left:3px solid var(--or);padding-left:calc(var(--u)*1.2)}
+.cert .cq{grid-column:1/-1;margin:0;font-family:var(--f-disp);font-weight:900;font-size:clamp(18px,calc(var(--u)*2),42px);line-height:1.6;white-space:pre-line;border-left:3px solid var(--or);padding-left:calc(var(--u)*1.2)}
 .cert .cfoot{grid-column:1/-1;display:flex;justify-content:space-between;align-items:end;gap:16px;border-top:2px solid var(--or);padding-top:calc(var(--u)*.8)}
 .cert .tagline{font-family:var(--f-disp);font-weight:900;font-size:clamp(16px,calc(var(--u)*1.6),34px);color:var(--or);line-height:1.4}
 .qr{background:#fff;padding:4px;width:clamp(64px,calc(var(--u)*6.5),140px);aspect-ratio:1;flex:none}
@@ -205,7 +213,7 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
         <div class="seizetag">強制出品</div>
         <div class="nocam" id="nocam" hidden></div>
       </div>
-      <div class="camnote"><span>このカメラの前にある物は、<b>予告なく出品されます。</b></span><span class="mute">人物は鑑定対象外</span></div>
+      <div class="camnote"><span>このカメラの前にある物は、<b>別の世界へ予告なく出品されます。</b></span><span class="mute">人物は鑑定対象外</span></div>
     </div>
     <section class="stage" id="stage" aria-live="polite"></section>
   </main>
@@ -225,33 +233,38 @@ const pick=a=>a[Math.floor(Math.random()*a.length)];
 const fmt=n=>Math.round(Number(n)||0).toLocaleString("ja-JP");
 function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 
-/* 競売が開かれる異界（GAS側にも同じ設定がある） */
+/* 競売が開かれるパラレルワールド（GAS側にも同じ設定がある）。現実から1つだけずれている */
 const CITIES={
-  sea:{name:"海上都市ネオ・ワダツミ",year:"2126",unit:"塩",coord:"LAT 35.40 N / LON 139.80 E / 海抜 -12m",rule:"真水と乾いた物が最も尊い",
-    residents:["潮守のばあさん","漂着物コレクターの少年","海藻商人","都市の考古学者"]},
-  moon:{name:"月面都市セレネ第三区",year:"2088",unit:"錨貨",coord:"MARE TRANQUILLITATIS / 1/6 G",rule:"重い物ほど錨として価値がある",
-    residents:["浮遊症の配管工","重量信仰の神官","軽量化マニアの技師","地球史の講師"]},
-  silent:{name:"静寂都市ミナモ",year:"2201",unit:"沈黙",coord:"SECTOR 0dB / 発声禁止区域",rule:"声を出すことは違法",
-    residents:["筆談代書屋","音の密売人","静寂警備隊長","古代言語学者"]},
-  cyber:{name:"電脳都市ゼロ・レイヤー",year:"2310",unit:"実体",coord:"LAYER 0 / 物理残存率 0.03%",rule:"触れる物体は異常に珍しい",
-    residents:["実体フェチの富豪","データ消去局の役人","アナログ復興派の若者","物理考古学者"]}
+  half:{name:"重力が半分の世界",code:"G = 0.5",unit:"円",rule:"重力がいつもの半分。物も人も、ふわっと浮きやすい。",
+    residents:[["浮きやすい小学生","すぐ体が浮いて困っている"],["配送会社の社長","物を投げて遠くへ運ぶ商売"],["重りコレクター","重い物を集めている"]]},
+  lockdown:{name:"ロックダウンが当たり前の世界",code:"OUT 1/WEEK",unit:"円",rule:"外に出られるのは週に1回だけ。みんな家の中で暮らしている。",
+    residents:[["在宅10年目の会社員","家の中が退屈でしかたない"],["5人家族のお母さん","家族がずっと家にいて息がつまる"],["配達ドローン乗り","外に出られる数少ない人"]]},
+  smart:{name:"すべての物に知能がある世界",code:"IQ > 0",unit:"円",rule:"道具にもぜんぶ心と意見がある。物にも気をつかって暮らす。",
+    residents:[["物の悩み相談員","道具の悩みを聞く仕事"],["しゃべる冷蔵庫","家電の仲間をふやしたい"],["静かな物が好きな作家","うるさい道具に疲れている"]]},
+  rain:{name:"毎日雨が降る世界",code:"RAIN 365/365",unit:"円",rule:"1年365日、雨がやまない。晴れを見たことがある人はいない。",
+    residents:[["乾かし屋","濡れた物を乾かす商売"],["晴れを知らない子ども","太陽の話にあこがれている"],["傘職人","雨の道具なら負けない"]]},
+  noon:{name:"夜が来ない世界",code:"SUNSET: NONE",unit:"円",rule:"太陽が沈まない。ずっと昼なので、みんな眠るのに苦労している。",
+    residents:[["眠れない看護師","夜勤明けでも眠れない"],["暗さ屋","暗い部屋を貸す商売"],["星を見たい天文ファン","本物の星を見たことがない"]]}
 };
 const CITY_KEYS=Object.keys(CITIES);
 
-/* GAS未設定時の模擬鑑定（写真の中身は読めないので「正体不明の遺物」として競る） */
+/* GAS未設定時の模擬鑑定（写真の中身は読めないので「持ち主不明の品」として競る） */
 const MOCK={
-  sea:[{item:"陸時代の正体不明の遺物",era:"陸時代",appraisal:"考古学者いわく『陸の民はこれを毎朝なでて、水の神の機嫌をとった』。",
-    bids:[["漂着物コレクターの少年","陸の時代の遺物だ！ ぼくの貯金ぜんぶ、3,000塩！",3000],["海藻商人","錆びないなら浮きになる。8,000塩。",8000],["都市の考古学者","祭祀具の可能性があります。学術保護で15,000塩。",15000],["潮守のばあさん","乾いてるじゃないか。乾いてる物は全部ほしい。26,000塩！",26000],["海藻商人","……降りる。ばあさんには勝てない。",26000]],
-    winner:"潮守のばあさん",use:"雨季のあいだ、湿気よけのお守りとして寝床の上に吊るす。",quote:"三十年ぶりに、\n乾いた物を手でさわった。\n陸の人はこんな贅沢を毎日していたのか"}],
-  moon:[{item:"地球時代の正体不明の遺物",era:"地球時代",appraisal:"講師いわく『地球人はこれを持つことで、自分が飛ばないことを確かめていた』。",
-    bids:[["軽量化マニアの技師","重い。処分費込みで100錨貨なら引き取る。",100],["浮遊症の配管工","重さがあるなら何でもいい！ 2,400錨貨！",2400],["重量信仰の神官","この重み、徳が宿っている。6,000錨貨。",6000],["浮遊症の配管工","給料2か月分……7,200錨貨！",7200]],
-    winner:"浮遊症の配管工",use:"作業ベルトに吊るし、配管工事中に天井まで浮かないための錨にする。",quote:"持った瞬間、\n足が床に戻ってきた。\n地球の人はみんな飛ばずに済んでいたのか"}],
-  silent:[{item:"声の時代の正体不明の遺物",era:"声の時代",appraisal:"言語学者いわく『声の時代の人々は、沈黙を保つためにこれを握りしめていた』。",
-    bids:[["筆談代書屋","（筆談）何か書けそうな形だ。40沈黙。",40],["音の密売人","（身振り）振ったら音が鳴るかもしれない。120沈黙。",120],["静寂警備隊長","（筆談）音が出る疑いあり。没収のため260沈黙。",260],["音の密売人","（震える手で）……300沈黙。",300]],
-    winner:"音の密売人",use:"地下の闇市で、1回だけ振って音を聴かせる見世物にする。",quote:"振ったら、\nかすかに音がした。\n声の時代の人はこんな危険物を持ち歩いていたのか"}],
-  cyber:[{item:"物理時代の正体不明の遺物",era:"物理時代",appraisal:"考古学者いわく『物理時代の人は、これに触れることでログインしていた』。",
-    bids:[["アナログ復興派の若者","触れる！ 本物だ！ 200実体！",200],["データ消去局の役人","バックアップの取れない物体は危険です。回収のため900実体。",900],["実体フェチの富豪","重さ。温度。手ざわり。すべてが完璧だ。2,000実体。",2000],["データ消去局の役人","……局の予算を超えました。降ります。",2000]],
-    winner:"実体フェチの富豪",use:"屋敷の真ん中に置き、毎朝10分だけ素手で触れる時間をつくる。",quote:"コピーも、削除もできない。\nたった一つしかない。\n物理時代の人はこんな孤独な物に囲まれていたのか"}]
+  half:{item:"持ち主不明の品",appraisal:"この世界では、ずっしり重い物ほど値打ちがある。",
+    bids:[["配送会社の社長","投げて運べそう。2,000円。",2000],["浮きやすい小学生","持ってたら浮かない！5,000円！",5000],["重りコレクター","この重さはいい。12,000円。",12000],["浮きやすい小学生","お年玉ぜんぶで15,000円！",15000],["重りコレクター","…子どもには勝てない。降ります。",15000]],
+    winner:"浮きやすい小学生",use:"ランドセルに入れて、登校中に浮かないようにする。",quote:"これで、やっと\n普通に歩いて学校に行ける"},
+  lockdown:{item:"持ち主不明の品",appraisal:"この世界では、家の中で楽しめる物ほど値打ちがある。",
+    bids:[["配達ドローン乗り","外で使う物なら2,000円。",2000],["在宅10年目の会社員","家で遊べそう。6,000円。",6000],["5人家族のお母さん","1人になれる道具なら1万円！",10000],["在宅10年目の会社員","…15,000円！",15000],["5人家族のお母さん","20,000円。ここは譲れない。",20000]],
+    winner:"5人家族のお母さん",use:"これを持ってトイレにこもり、1日10分だけ1人になる。",quote:"家族のことは好き。\nでも、10分だけ1人がいい"},
+  smart:{item:"持ち主不明の品",appraisal:"この世界では、おとなしくて文句を言わない物ほど値打ちがある。",
+    bids:[["しゃべる冷蔵庫","仲間にしたい。1,000円。",1000],["物の悩み相談員","さみしそうな顔をしてる。4,000円。",4000],["静かな物が好きな作家","一度も文句を言わない…9,000円！",9000],["しゃべる冷蔵庫","…静かすぎて話し相手にならない。降りる。",9000]],
+    winner:"静かな物が好きな作家",use:"書斎の机に置いて、静かな同僚として一緒に働く。",quote:"うちのペンは毎日グチを言う。\nこの子は何も言わない"},
+  rain:{item:"持ち主不明の品",appraisal:"この世界では、濡れていない物そのものが珍しい。",
+    bids:[["傘職人","雨に強いか試したい。3,000円。",3000],["乾かし屋","一度も濡れてない！8,000円！",8000],["晴れを知らない子ども","太陽の国から来たの？12,000円！",12000],["乾かし屋","商売の見本に18,000円。",18000]],
+    winner:"乾かし屋",use:"店の一番いい棚に飾って「乾いた物の見本」にする。",quote:"乾いた物って、\nこんなにさらさらしてるのか"},
+  noon:{item:"持ち主不明の品",appraisal:"この世界では、光をさえぎれる物ほど値打ちがある。",
+    bids:[["星を見たい天文ファン","暗くできるなら3,000円。",3000],["暗さ屋","店の商品になる。7,000円。",7000],["眠れない看護師","夜勤明けに眠りたい。11,000円！",11000],["暗さ屋","…眠れない人には勝てない。降ります。",11000]],
+    winner:"眠れない看護師",use:"仮眠室で顔にのせて、少しでも暗くして眠る。",quote:"まぶたの裏が\nやっと暗くなった"}
 };
 
 /* ===== 状態 ===== */
@@ -286,15 +299,11 @@ function idle(){
   S.city=pick(CITY_KEYS.filter(k=>k!==S.city));
   const c=CITIES[S.city];
   setMode("● LIVE · 監視中");
-  stage.innerHTML=`<div class="lbl" id="sLbl">NEXT AUCTION · ${esc(c.year)}</div>
-    <h1 class="idle-h" id="sH">あなたの持ち物は、<br>まもなく<em>${esc(c.name)}</em>で<br>競りにかけられます。</h1>
-    <dl class="venue">
-      <dt>会場</dt><dd><b>${esc(c.name)}</b>（${esc(c.year)}年）</dd>
-      <dt>常識</dt><dd>${esc(c.rule)}</dd>
-      <dt>通貨</dt><dd>${esc(c.unit)}</dd>
-      <dt>入札者</dt><dd>${c.residents.map(esc).join("、")}</dd>
-    </dl>
-    <p class="idle-sub">出品の合図はありません。このカメラは、勝手にシャッターを切ります。</p>`;
+  stage.innerHTML=`<div class="lbl">NEXT AUCTION · PARALLEL WORLD</div>
+    <h1 class="idle-h" id="sH">次の競売会場は<br><em>${esc(c.name)}</em></h1>
+    <p class="idle-sub" style="color:var(--fg)">${esc(c.rule)}</p>
+    <dl class="venue">${c.residents.map(r=>`<dt>入札者</dt><dd><b>${esc(r[0])}</b>　<span class="mute">${esc(r[1])}</span></dd>`).join("")}</dl>
+    <p class="idle-sub">カメラの前にある物は、合図なしにこの世界へ出品されます。</p>`;
   restartAnim();
   glitch($("#sH"));
   schedule();
@@ -342,7 +351,7 @@ async function appraise(image){
     return normalize(d.result);
   }
   await sleep(rnd(2500,4500));
-  const m=structuredClone(pick(MOCK[S.city]));
+  const m=structuredClone(MOCK[S.city]);
   return normalize({...m,bids:m.bids.map(([who,line,price])=>({who,line,price}))});
 }
 function normalize(d){
@@ -351,7 +360,7 @@ function normalize(d){
   d.bids=d.bids.slice(0,7).map(b=>{const p=Math.max(last,Number(b.price)||0);const out=p===last&&last>0;last=p;return{who:String(b.who||"住人"),line:String(b.line||""),price:p,out}});
   d.price=Number(d.price)||last;if(d.price<last)d.price=last;
   d.winner=String(d.winner||[...d.bids].reverse().find(b=>!b.out)?.who||d.bids[0].who);
-  for(const k of["item","era","appraisal","use","quote"])d[k]=String(d[k]||"");
+  for(const k of["item","appraisal","use","quote"])d[k]=String(d[k]||"");
   return d;
 }
 
@@ -359,10 +368,10 @@ async function runAuction(image,thumb){
   const c=CITIES[S.city];
   const lot=String(S.lot).padStart(4,"0");
   S.phase="appraise";
-  stage.innerHTML=`<div class="lothead"><div class="lbl alert">LOT ${lot} · 強制出品</div><div class="lbl mute">${esc(c.name)} / ${esc(c.year)}</div></div>
+  stage.innerHTML=`<div class="lothead"><div class="lbl alert">LOT ${lot} · 強制出品</div><div class="lbl mute">${esc(c.name)}</div></div>
     <div class="appr"><div class="thumb"><img alt="" src="${thumb}"></div><p class="typing" id="typ"><span class="cur"></span></p></div>`;
   restartAnim();
-  const lines=[`出品者の同意を確認……省略。`,`${c.year}年の${c.name}へ転送中。`,`住人たちが鑑定しています。`];
+  const lines=[`持ち主の同意……省略しました。`,`${c.name}へ送っています。`,`住人たちが品定めをしています。`];
   let alive=true;
   const typer=(async()=>{const el=$("#typ");let done="";
     for(const t of lines){for(let i=1;i<=t.length&&alive;i++){el.innerHTML=done+esc(t.slice(0,i))+'<span class="cur"></span>';if(i%2)SND.type();await sleep("。、…".includes(t[i-1])?260:55)}done+=esc(t)+"<br>";if(!alive)return;await sleep(500)}})();
@@ -372,29 +381,36 @@ async function runAuction(image,thumb){
   alive=false;await typer;
   S.phase="bidding";setMode("▲ BIDDING");
   pageGlitch();
-  stage.innerHTML=`<div class="lothead"><div class="lbl">LOT ${lot} · ${esc(d.era)}</div><div class="lbl mute">${esc(c.name)}</div></div>
-    <h2 class="item" id="itm">${esc(d.item)}</h2>
-    <div class="appr"><div class="thumb"><img alt="" src="${thumb}"></div><p>${esc(d.appraisal)}</p></div>
-    <div class="price"><b id="pr">0</b><span>${esc(c.unit)}</span><small id="pc">入札 0件</small></div>
-    <div class="feed" id="feed"></div>`;
+  // 台本に出てくる入札者を3人に揃える（設定の住人を優先）
+  const names=c.residents.map(r=>r[0]);
+  d.bids.forEach(b=>{if(!names.includes(b.who)&&names.length<4)names.push(b.who)});
+  const people=names.slice(0,3).map(n=>({n,t:(c.residents.find(r=>r[0]===n)||[n,""])[1]}));
+  stage.innerHTML=`<div class="lothead"><div class="lbl">LOT ${lot} · ${esc(c.name)}</div><div class="lbl mute" id="pc">入札 0件</div></div>
+    <div class="appr"><div class="thumb"><img alt="" src="${thumb}"></div><div><h2 class="item" id="itm">${esc(d.item)}</h2><p>${esc(d.appraisal)}</p></div></div>
+    <div class="bidders">${people.map((p,i)=>`<div class="bdr" id="bd${i}"><b>${esc(p.n)}</b><span>${esc(p.t)}</span><em></em></div>`).join("")}</div>
+    <div class="speech" id="sp"><span class="who">入札開始</span><p class="say">誰が最初に手をあげる？</p></div>
+    <div class="price"><b id="pr">0</b><span>${esc(c.unit)}</span><small>現在の最高値</small></div>`;
   restartAnim();glitch($("#itm"));
-  await sleep(2200);
-  const feed=$("#feed");let prev=0;
+  await sleep(3000);
+  let prev=0;
   for(const [i,b] of d.bids.entries()){
-    feed.querySelectorAll(".bid").forEach((x,j,all)=>{x.classList.remove("top");if(all.length-j>1)x.classList.add("old")});
-    const row=document.createElement("div");row.className="bid";
     const up=b.price>prev&&!b.out;
-    row.classList.add(up?"top":"out");
-    row.innerHTML=`<span class="who">${esc(b.who)}</span><span class="say">${esc(b.line)}</span><span class="amt">${up?fmt(b.price)+" "+esc(c.unit):"降りる"}</span>`;
-    feed.append(row);
-    while(feed.children.length>3)feed.firstChild.remove();
+    const k=people.findIndex(p=>p.n===b.who);
+    document.querySelectorAll(".bdr").forEach(x=>x.classList.remove("now","lead"));
+    const card=k>=0?$("#bd"+k):null;
+    if(card){card.classList.add("now");if(up){card.querySelector("em").textContent=fmt(b.price)+" "+c.unit;card.classList.add("lead")}else card.classList.add("gone")}
+    const sp=$("#sp");sp.className="speech"+(up?"":" out");void sp.offsetWidth;sp.classList.add("pop");
+    sp.innerHTML=`<span class="who">${esc(b.who)}${up?`　→ ${fmt(b.price)} ${esc(c.unit)}`:"　→ 降りる"}</span><p class="say">「${esc(b.line)}」</p>`;
     $("#pc").textContent=`入札 ${i+1}件`;
     if(up){tick($("#pr"),prev,b.price);prev=b.price;SND.bid(i)}else SND.out();
-    await sleep(rnd(2300,3000));
+    await sleep(rnd(3800,4600));
   }
   $("#pr").textContent=fmt(d.price);
+  document.querySelectorAll(".bdr").forEach(x=>x.classList.remove("now"));
+  const sp=$("#sp");sp.className="speech pop";
+  sp.innerHTML=`<span class="who">落札</span><p class="say">${esc(d.winner)}が ${fmt(d.price)}${esc(c.unit)}で落札！</p>`;
   SND.hammer();
-  await sleep(600);
+  await sleep(2600);
   sold(d,thumb,lot,c);
 }
 function tick(el,from,to){const t0=performance.now(),dur=650;const st=t=>{const k=Math.min(1,(t-t0)/dur);el.textContent=fmt(from+(to-from)*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(st)};requestAnimationFrame(st)}
@@ -402,15 +418,16 @@ function tick(el,from,to){const t0=performance.now(),dur=650;const st=t=>{const 
 function sold(d,thumb,lot,c){
   S.phase="sold";setMode("★ SOLD");
   stage.innerHTML=`<div class="cert">
-      <div class="chead"><span class="ctitle">${esc(c.name)}　落札証明書</span><span class="lbl">LOT ${lot}</span></div>
+      <div class="chead"><span class="ctitle">落札証明書　<span class="mute" style="font-weight:700">${esc(c.name)}</span></span><span class="lbl">LOT ${lot}</span></div>
       <div class="cph"><img alt="" src="${thumb}"><div class="stamp">落札</div></div>
       <dl>
-        <dt>出品物</dt><dd>${esc(d.item)}（${esc(d.era)}）</dd>
+        <dt>出品物</dt><dd>${esc(d.item)}</dd>
         <dt>落札額</dt><dd class="p">${fmt(d.price)} ${esc(c.unit)}</dd>
         <dt>落札者</dt><dd>${esc(d.winner)}</dd>
+        <dt>価値</dt><dd>${esc(d.appraisal)}</dd>
         <dt>使い道</dt><dd>${esc(d.use)}</dd>
       </dl>
-      <p class="cq">「${esc(d.quote.replace(/\\n/g,"\n"))}」</p>
+      <p class="cq"><span class="lbl" style="display:block">${esc(d.winner)}のひとこと</span>「${esc(d.quote.replace(/\\n/g,"\n"))}」</p>
       <div class="cfoot"><div><div class="tagline">あなたの持ち物は、<br>別の世界では宝物かもしれない。</div><div class="lbl mute" style="margin-top:6px">MVMNT · YEP2026</div></div>${CFG.qrUrl?'<div class="qr" id="qr"></div>':""}</div>
     </div>
     <div class="bar"><i id="cbar"></i></div>`;
@@ -441,14 +458,14 @@ async function failed(e){
   function f(now){
     const t=(now-t0)/1000,c=CITIES[S.city];
     h1.textContent=`REC ${Math.floor(t*2)%2?"●":"○"}  CAM-01`;
-    h2.textContent=`${c.year}\n${c.unit}`;
+    h2.textContent=`PARALLEL WORLD\n${c.code}`;
     h3.textContent=`T+${t.toFixed(2).padStart(8,"0")}\nSCAN ${(88+Math.sin(t*1.7)*9).toFixed(1)}%`;
     let nx="";
     if(S.phase==="watch"){const r=(S.nextAt-now)/1000;nx=r>CFG.lockSec+4?`NEXT ${"?".repeat(2+Math.floor(t*3)%3)}.?s`:`NEXT ${Math.max(0,r).toFixed(1)}s`}
     else if(S.phase==="lock")nx=`LOCK ${Math.max(0,(S.nextAt-now)/1000).toFixed(1)}s`;
     else nx=S.phase.toUpperCase();
     h4.textContent=`${nx}\nOBJ ${S.phase==="watch"?"SEARCHING":"ACQUIRED"}`;
-    hr.textContent=`${c.coord}  ·  ${c.name}  ·  LOT ${String(S.lot).padStart(4,"0")}`;
+    hr.textContent=`${c.code}  ·  ${c.name}  ·  LOT ${String(S.lot).padStart(4,"0")}`;
     requestAnimationFrame(f);
   }
   requestAnimationFrame(f);
