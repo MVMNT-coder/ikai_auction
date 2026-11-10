@@ -72,7 +72,7 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
 .camnote b{font-family:var(--f-disp);font-weight:900;color:var(--fg)}
 
 /* 競売台 */
-.stage{display:flex;flex-direction:column;gap:calc(var(--u)*1.3);min-width:0;min-height:0;max-height:100%;justify-content:center;animation:in .45s ease both}
+.stage{position:relative;display:flex;flex-direction:column;gap:calc(var(--u)*1.3);min-width:0;min-height:0;max-height:100%;justify-content:center;animation:in .45s ease both}
 @keyframes in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 .idle-h{font-family:var(--f-disp);font-weight:900;font-size:clamp(26px,calc(var(--u)*3.3),70px);line-height:1.35;margin:0;text-wrap:balance}
 .idle-h em{font-style:normal;color:var(--or)}
@@ -97,7 +97,24 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
 .bidders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:calc(var(--u)*.8)}
 .bdr{border:1px solid var(--line);padding:calc(var(--u)*.6) calc(var(--u)*.8);display:flex;flex-direction:column;gap:2px;min-width:0;transition:border-color .25s,background .25s,opacity .25s}
 .bdr b{font-family:var(--f-disp);font-weight:900;font-size:clamp(13px,calc(var(--u)*1.15),26px);line-height:1.35}
-.bdr span{font-size:clamp(11px,calc(var(--u)*.8),17px);color:var(--mute);line-height:1.4}
+.bdr.hide{visibility:hidden}
+.bdr.arrive{animation:arrive .8s ease-out}
+@keyframes arrive{0%{background:var(--or)}100%{background:rgba(255,92,0,.1)}}
+/* 入札者の登場ポップアップ */
+.intro{position:absolute;inset:-8px;z-index:5;display:grid;place-items:center;background:rgba(10,10,10,.9)}
+.icard{border:2px solid var(--or);background:var(--bk);padding:calc(var(--u)*2) calc(var(--u)*2.6);display:grid;gap:calc(var(--u)*.7);width:min(100%,calc(var(--u)*44));box-shadow:0 0 60px rgba(255,92,0,.25);animation:pop .45s cubic-bezier(.2,1.5,.4,1) both;transform-origin:center}
+.icard b{font-family:var(--f-disp);font-weight:900;font-size:clamp(30px,calc(var(--u)*4.4),96px);line-height:1.25;color:var(--or);text-wrap:balance}
+.icard p{margin:0;font-size:clamp(16px,calc(var(--u)*1.8),40px);line-height:1.5}
+/* 場面ごとの大きな表示 */
+.reveal{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*2);align-items:center}
+.reveal .thumb{width:clamp(110px,calc(var(--u)*15),320px)}
+.big-item{font-family:var(--f-disp);font-weight:900;font-size:clamp(30px,calc(var(--u)*4.4),96px);line-height:1.25;margin:0;text-wrap:balance}
+.big-sub{margin:0;font-family:var(--f-disp);font-weight:700;font-size:clamp(18px,calc(var(--u)*2.2),48px);line-height:1.5;text-wrap:balance;border-left:4px solid var(--or);padding-left:calc(var(--u)*1.4)}
+.mini{display:flex;align-items:center;gap:calc(var(--u)*1)}
+.mini .thumb{width:clamp(40px,calc(var(--u)*4),90px)}
+.mini b{font-family:var(--f-disp);font-weight:900;font-size:clamp(16px,calc(var(--u)*1.7),36px)}
+.won-price{font-family:var(--f-mono);font-weight:700;font-size:clamp(48px,calc(var(--u)*7.5),170px);line-height:1;color:var(--or);font-variant-numeric:tabular-nums;text-shadow:0 0 24px rgba(255,92,0,.35)}
+.won-price span{font-family:var(--f-disp);font-size:.35em;margin-left:.2em}
 .bdr em{font-style:normal;font-family:var(--f-mono);font-weight:700;font-size:clamp(12px,calc(var(--u)*1),22px);color:var(--fg);font-variant-numeric:tabular-nums;min-height:1.4em}
 .bdr.now{border-color:var(--or);background:rgba(255,92,0,.1)}
 .bdr.now b,.bdr.now em{color:var(--or)}
@@ -306,8 +323,7 @@ function idle(){
   setMode("● LIVE · 監視中");
   stage.innerHTML=`<div class="lbl">NEXT AUCTION · ANOTHER WORLD</div>
     <h1 class="idle-h" id="sH">次の競売会場は<br><em>${esc(c.name)}</em></h1>
-    <p class="idle-sub" style="color:var(--fg)">${esc(c.rule)}</p>
-    <dl class="venue">${c.residents.map(r=>`<dt>入札者</dt><dd><b>${esc(r[0])}</b>　<span class="mute">${esc(r[1])}</span></dd>`).join("")}</dl>
+    <p class="big-sub">${esc(c.rule)}</p>
     <p class="idle-sub">カメラの前にある物は、合図なしにこの世界へ出品されます。</p>`;
   restartAnim();
   glitch($("#sH"));
@@ -384,25 +400,33 @@ async function runAuction(image,thumb){
   try{d=await appraise(image)}
   catch(e){alive=false;await typer;return failed(e)}
   alive=false;await typer;
-  S.phase="bidding";setMode("▲ BIDDING");
+  // 場面1：何が出品されたか
+  S.phase="bidding";setMode("▲ APPRAISED");
   pageGlitch();
-  // 台本に出てくる入札者を3人に揃える（設定の住人を優先）
+  stage.innerHTML=`<div class="lbl">LOT ${lot} · ${esc(c.name)}</div>
+    <div class="reveal"><div class="thumb"><img alt="" src="${thumb}"></div><h2 class="big-item" id="itm">${esc(d.item)}</h2></div>
+    <p class="big-sub">${esc(d.appraisal)}</p>`;
+  restartAnim();glitch($("#itm"));
+  await sleep(5000);
+
+  // 場面2：入札
+  setMode("▲ BIDDING");
   const names=c.residents.map(r=>r[0]);
   d.bids.forEach(b=>{if(!names.includes(b.who)&&names.length<4)names.push(b.who)});
   const people=names.slice(0,3).map(n=>({n,t:(c.residents.find(r=>r[0]===n)||[n,""])[1]}));
-  stage.innerHTML=`<div class="lothead"><div class="lbl">LOT ${lot} · ${esc(c.name)}</div><div class="lbl mute" id="pc">入札 0件</div></div>
-    <div class="appr"><div class="thumb"><img alt="" src="${thumb}"></div><div><h2 class="item" id="itm">${esc(d.item)}</h2><p>${esc(d.appraisal)}</p></div></div>
-    <div class="bidders">${people.map((p,i)=>`<div class="bdr" id="bd${i}"><b>${esc(p.n)}</b><span>${esc(p.t)}</span><em></em></div>`).join("")}</div>
+  stage.innerHTML=`<div class="lothead"><div class="mini"><div class="thumb"><img alt="" src="${thumb}"></div><b>${esc(d.item)}</b></div><div class="lbl mute" id="pc">入札 0件</div></div>
+    <div class="bidders">${people.map((p,i)=>`<div class="bdr hide" id="bd${i}"><b>${esc(p.n)}</b><em></em></div>`).join("")}</div>
     <div class="speech" id="sp"><span class="who">入札開始</span><p class="say">誰が最初に手をあげる？</p></div>
-    <div class="price"><b id="pr">0</b><span>${esc(c.unit)}</span><small>現在の最高値</small></div>`;
-  restartAnim();glitch($("#itm"));
-  await sleep(3000);
-  let prev=0;
+    <div class="price"><b id="pr">0</b><span>${esc(c.unit)}</span><small>いまの最高値</small></div>`;
+  restartAnim();
+  await sleep(1800);
+  let prev=0,met=0;
   for(const [i,b] of d.bids.entries()){
     const up=b.price>prev&&!b.out;
     const k=people.findIndex(p=>p.n===b.who);
-    document.querySelectorAll(".bdr").forEach(x=>x.classList.remove("now","lead"));
     const card=k>=0?$("#bd"+k):null;
+    if(card&&card.classList.contains("hide")){met++;await introduce(people[k],card,met,people.length)}
+    document.querySelectorAll(".bdr").forEach(x=>x.classList.remove("now","lead"));
     if(card){card.classList.add("now");if(up){card.querySelector("em").textContent=fmt(b.price)+" "+c.unit;card.classList.add("lead")}else card.classList.add("gone")}
     const sp=$("#sp");sp.className="speech"+(up?"":" out");void sp.offsetWidth;sp.classList.add("pop");
     sp.innerHTML=`<span class="who">${esc(b.who)}${up?`　→ ${fmt(b.price)} ${esc(c.unit)}`:"　→ 降りる"}</span><p class="say">「${esc(b.line)}」</p>`;
@@ -410,18 +434,40 @@ async function runAuction(image,thumb){
     if(up){tick($("#pr"),prev,b.price);prev=b.price;SND.bid(i)}else SND.out();
     await sleep(rnd(3800,4600));
   }
-  $("#pr").textContent=fmt(d.price);
-  document.querySelectorAll(".bdr").forEach(x=>x.classList.remove("now"));
-  const sp=$("#sp");sp.className="speech pop";
-  sp.innerHTML=`<span class="who">落札</span><p class="say">${esc(d.winner)}が ${fmt(d.price)}${esc(c.unit)}で落札！</p>`;
+
+  // 場面3：落札の瞬間
+  setMode("★ SOLD");
   SND.hammer();
-  await sleep(2600);
+  pageGlitch();
+  stage.innerHTML=`<div class="lbl">LOT ${lot} · 落札</div>
+    <h2 class="big-item" id="wn"><em style="font-style:normal;color:var(--or)">${esc(d.winner)}</em>が<br>落札しました</h2>
+    <div class="won-price">${fmt(d.price)}<span>${esc(c.unit)}</span></div>
+    <p class="big-sub">${esc(d.use)}</p>`;
+  restartAnim();glitch($("#wn"));
+  await sleep(6000);
   sold(d,thumb,lot,c);
+}
+
+/* 入札者が初めて出てきたとき：中央に大きく紹介 → 小さくなって自分の席へ */
+async function introduce(p,card,n,total){
+  const ov=document.createElement("div");ov.className="intro";
+  ov.innerHTML=`<div class="icard"><span class="lbl">入札者 登場 · ${n}/${total}</span><b>${esc(p.n)}</b><p>${esc(p.t)}</p></div>`;
+  stage.append(ov);SND.intro();
+  await sleep(2600);
+  const ic=ov.querySelector(".icard"),a=ic.getBoundingClientRect(),z=card.getBoundingClientRect();
+  const dx=(z.left+z.width/2)-(a.left+a.width/2),dy=(z.top+z.height/2)-(a.top+a.height/2),sc=Math.max(.15,z.width/a.width);
+  ic.style.animation="none";
+  const anim=ic.animate([{transform:"none",opacity:1},{transform:`translate(${dx}px,${dy}px) scale(${sc})`,opacity:.2}],{duration:550,easing:"cubic-bezier(.6,0,.3,1)",fill:"forwards"});
+  ov.animate([{background:"rgba(10,10,10,.9)"},{background:"rgba(10,10,10,0)"}],{duration:550,fill:"forwards"});
+  await anim.finished.catch(()=>{});
+  ov.remove();
+  card.classList.remove("hide");card.classList.add("arrive");
+  await sleep(500);
 }
 function tick(el,from,to){const t0=performance.now(),dur=650;const st=t=>{const k=Math.min(1,(t-t0)/dur);el.textContent=fmt(from+(to-from)*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(st)};requestAnimationFrame(st)}
 
 function sold(d,thumb,lot,c){
-  S.phase="sold";setMode("★ SOLD");
+  S.phase="sold";setMode("★ CERTIFIED");
   stage.innerHTML=`<div class="cert">
       <div class="chead"><span class="ctitle">落札証明書　<span class="mute" style="font-weight:700">${esc(c.name)}</span></span><span class="lbl">LOT ${lot}</span></div>
       <div class="cph"><img alt="" src="${thumb}"><div class="stamp">落札</div></div>
@@ -429,8 +475,6 @@ function sold(d,thumb,lot,c){
         <dt>出品物</dt><dd>${esc(d.item)}</dd>
         <dt>落札額</dt><dd class="p">${fmt(d.price)} ${esc(c.unit)}</dd>
         <dt>落札者</dt><dd>${esc(d.winner)}</dd>
-        <dt>価値</dt><dd>${esc(d.appraisal)}</dd>
-        <dt>使い道</dt><dd>${esc(d.use)}</dd>
       </dl>
       <p class="cq"><span class="lbl" style="display:block">${esc(d.winner)}のひとこと</span>「${esc(d.quote.replace(/\\n/g,"\n"))}」</p>
       <div class="cfoot"><div><div class="tagline">あなたの持ち物は、<br>別の世界では宝物かもしれない。</div><div class="lbl mute" style="margin-top:6px">MVMNT · YEP2026</div></div>${CFG.qrUrl?'<div class="qr" id="qr"></div>':""}</div>
@@ -549,6 +593,7 @@ const SND=(()=>{
     out(){tone(392,.3,{type:"triangle",vol:.06,slide:330})},
     hammer(){tone(90,.3,{vol:.55,slide:45});noise(.12,{vol:.45,f:900,q:.8});tone(90,.3,{vol:.45,slide:45,at:.32});noise(.12,{vol:.35,f:900,q:.8,at:.32})},
     stamp(){[523.3,659.3,784,1046.5].forEach((f,i)=>tone(f,.5,{type:"triangle",vol:.08,at:i*.1}))},
+    intro(){[392,523.3,659.3].forEach((f,i)=>tone(f,.35,{type:"triangle",vol:.07,at:i*.07}));noise(.2,{vol:.05,f:4000,q:.5})},
     error(){tone(330,.25,{type:"sawtooth",vol:.1,slide:165});tone(220,.4,{type:"sawtooth",vol:.1,at:.22,slide:110})}
   };
 })();
