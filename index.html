@@ -222,10 +222,36 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
 .icard.withfig{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*.4) calc(var(--u)*2);align-items:center}
 .icard.withfig .fig{grid-row:1/4;height:calc(var(--u)*15);aspect-ratio:3/4;position:relative}
 
+/* 結果ページ：フィルターをかけたカードを中央に大きく。下の帯に 世界｜落札者｜ひとこと */
+#result{position:fixed;inset:0;z-index:20;background:var(--bk);display:grid;grid-template-rows:minmax(0,1fr) auto auto;gap:calc(var(--u)*1.2);
+  padding-block:calc(var(--u)*1.6) calc(var(--u)*1.4);padding-left:max(calc(var(--u)*3),env(safe-area-inset-left,0px));padding-right:max(calc(var(--u)*3),env(safe-area-inset-right,0px))}
+#result[hidden]{display:none}
+.rwrap{display:grid;place-items:center;min-height:0;min-width:0}
+.rcard{--u:min(1.45vw,2.58vh);height:100%;max-width:100%;aspect-ratio:3/2;position:relative;box-shadow:0 0 90px rgba(255,255,255,.14);animation:rstamp .5s cubic-bezier(.2,1.5,.4,1) both}
+.rcard .gc{position:absolute;inset:0}
+.rcard .gc .logo{height:calc(var(--u)*1.75)}
+.rcard .gc .pr{font-size:calc(var(--u)*2.05)}
+.rcard .gc .who small{font-size:calc(var(--u)*.56)}
+.rcard .gc .who b{font-size:calc(var(--u)*.85)}
+.rcard .gc .lotn{font-size:calc(var(--u)*.5)}
+@keyframes rstamp{from{opacity:0;transform:scale(1.35) rotate(-2deg)}to{opacity:1;transform:none}}
+.rband{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1.25fr);border-top:2px solid var(--or)}
+.rband>div{padding:calc(var(--u)*1) calc(var(--u)*1.6) 0;min-width:0;opacity:0;animation:in .45s ease both}
+.rband>div+div{border-left:1px solid var(--line)}
+.rband>div:first-child{padding-left:0}
+.rband>div:nth-child(1){animation-delay:.7s}.rband>div:nth-child(2){animation-delay:1.3s}.rband>div:nth-child(3){animation-delay:2.1s}
+.rband h3{font-family:var(--f-disp);font-weight:900;font-size:clamp(16px,calc(var(--u)*2),44px);line-height:1.3;margin:.15em 0 .2em;text-wrap:balance}
+.rband .rw h3{color:var(--or)}
+.rband p{margin:0;font-size:clamp(11px,calc(var(--u)*1),22px);line-height:1.55;color:var(--mute)}
+.rband .rp{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*1.2);align-items:center}
+.rband .rp .fig{height:calc(var(--u)*7.5);aspect-ratio:3/4;position:relative}
+.rband .rp p{color:var(--fg)}
+.rband .rq h3{font-size:clamp(18px,calc(var(--u)*2.3),50px);line-height:1.45;white-space:pre-line}
+
 /* 落札グリッド（Gキー、または ?grid で表示） */
 #grid{position:fixed;inset:0;z-index:30;background:#eef0f3;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:1px;color:#0b0b0c;font-family:"Melete","Michroma","JetBrains Mono",sans-serif}
 #grid[hidden]{display:none}
-.gc{position:relative;overflow:hidden;background:#f6f7f9;min-width:0;min-height:0}
+.gc{position:relative;overflow:hidden;background:#f6f7f9;min-width:0;min-height:0;color:#0b0b0c;font-family:"Melete","Michroma","JetBrains Mono",sans-serif}
 .gc .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.38) contrast(1.1) brightness(1.2)}
 .gc .veil{position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(246,247,249,.94) 0,rgba(246,247,249,.72) 17%,rgba(246,247,249,0) 34%,rgba(246,247,249,0) 62%,rgba(246,247,249,.8) 86%,rgba(246,247,249,.95) 100%),
@@ -296,6 +322,7 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
   <div class="ahead"><div><div class="lbl" id="aLot"></div><h2 id="aWorld"></h2><p id="aRule"></p></div><div class="lbl mute" id="aCount"></div></div>
   <div class="abody" id="abody"></div>
 </div>
+<div id="result" hidden></div>
 <div class="wrap" id="wrap">
   <header>
     <div class="logo">異界オークション<em>.</em></div>
@@ -571,18 +598,10 @@ async function runAuction(image,thumb){
     if(st&&!up)st.classList.add("gone");
   }
 
-  // 落札の瞬間（通常の画面に戻る）
-  setMode("★ SOLD");
+  // 落札 → そのまま結果ページへ
   SND.hammer();
   arena.hidden=true;
-  pageGlitch();
-  stage.innerHTML=`<div class="lbl">LOT ${lot} · 落札</div>
-    <h2 class="big-item" id="wn"><em style="font-style:normal;color:var(--or)">${esc(d.winner)}</em>が<br>落札しました</h2>
-    <div class="won-price">${fmt(d.price)}<span>${esc(c.unit)}</span></div>
-    <p class="big-sub">${esc(d.use)}</p>`;
-  restartAnim();glitch($("#wn"));
-  await sleep(6000);
-  sold(d,thumb,lot,c);
+  sold(d,thumb,lot,c,W,people.findIndex(p=>p.n===d.winner));
 }
 
 /* 入札者が初めて入札するとき：中央に大きく紹介 → 小さくなって自分の席へ */
@@ -603,27 +622,24 @@ async function introduce(p,st,n,total,world,k){
 }
 function tick(el,from,to){const t0=performance.now(),dur=650;const st=t=>{const k=Math.min(1,(t-t0)/dur);el.textContent=fmt(from+(to-from)*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(st)};requestAnimationFrame(st)}
 
-function sold(d,thumb,lot,c){
-  S.phase="sold";setMode("★ CERTIFIED");
-  stage.innerHTML=`<div class="cert">
-      <div class="chead"><span class="ctitle">落札証明書　<span class="mute" style="font-weight:700">${esc(c.name)}</span></span><span class="lbl">LOT ${lot}</span></div>
-      <div class="cph"><img alt="" src="${thumb}"><div class="stamp">落札</div></div>
-      <dl>
-        <dt>出品物</dt><dd>${esc(d.item)}</dd>
-        <dt>落札額</dt><dd class="p">${fmt(d.price)} ${esc(c.unit)}</dd>
-        <dt>落札者</dt><dd>${esc(d.winner)}</dd>
-      </dl>
-      <p class="cq"><span class="lbl" style="display:block">${esc(d.winner)}のひとこと</span>「${esc(d.quote.replace(/\\n/g,"\n"))}」</p>
-      <div class="cfoot"><div><div class="tagline">あなたの持ち物は、<br>別の世界では宝物かもしれない。</div><div class="lbl mute" style="margin-top:6px">MVMNT · YEP2026</div></div>${CFG.qrUrl?'<div class="qr" id="qr"></div>':""}</div>
+function sold(d,thumb,lot,c,world,k){
+  S.phase="sold";setMode("★ SOLD");
+  const rec={lot,photo:S.photo||thumb,price:d.price,winner:enName(c,d.winner),t:Date.now()};
+  const f=document.createElement("div");f.className="flash";document.body.append(f);setTimeout(()=>f.remove(),800);
+  const R=$("#result");
+  R.innerHTML=`<div class="rwrap"><div class="rcard">${cardHTML(rec)}</div></div>
+    <div class="rband">
+      <div class="rw"><span class="lbl">競売会場 · LOT ${lot}</span><h3>${esc(c.name)}</h3><p>${esc(c.rule)}</p></div>
+      <div class="rp">${k>=0?figHTML(world,k,0):"<span></span>"}<div><span class="lbl">落札者</span><h3>${esc(d.winner)}</h3><p>${esc(d.use)}</p></div></div>
+      <div class="rq"><span class="lbl">ひとこと</span><h3>「${esc(d.quote.replace(/\\n/g,"\n"))}」</h3></div>
     </div>
     <div class="bar"><i id="cbar"></i></div>`;
-  restartAnim();
-  if(CFG.qrUrl&&window.QRCode){try{new QRCode($("#qr"),{text:CFG.qrUrl,width:256,height:256,colorDark:"#000",colorLight:"#fff",correctLevel:QRCode.CorrectLevel.M})}catch{}}
-  setTimeout(()=>SND.stamp(),500);
-  const bar=$("#cbar");bar.animate([{transform:"scaleX(1)"},{transform:"scaleX(0)"}],{duration:CFG.certSec*1000,easing:"linear",fill:"forwards"});
-  addLog(thumb,d,c);addLot(d,c,lot);
+  R.hidden=false;
+  setTimeout(()=>SND.stamp(),450);
+  $("#cbar").animate([{transform:"scaleX(1)"},{transform:"scaleX(0)"}],{duration:CFG.certSec*1000,easing:"linear",fill:"forwards"});
+  addLog(thumb,d,c);addLot(rec);
   S.lot++;try{localStorage.setItem("ikai_lot",String(S.lot))}catch{}setLot();
-  setTimeout(()=>{pageGlitch();idle()},CFG.certSec*1000);
+  setTimeout(()=>{R.hidden=true;pageGlitch();idle()},CFG.certSec*1000);
 }
 function addLog(thumb,d,c){
   const L=$("#loglist");L.querySelector(".logempty")?.remove();
@@ -777,21 +793,24 @@ const SND=(()=>{
 const GRID_ONLY=new URLSearchParams(location.search).has("grid");
 let LOTS=[];try{LOTS=JSON.parse(localStorage.getItem("ikai_lots")||"[]")}catch{}
 function enName(c,winner){const r=c.residents.find(r=>r[0]===winner);return r&&r[2]?r[2]:String(winner).toUpperCase()}
-function addLot(d,c,lot){
-  LOTS.unshift({lot,photo:S.photo||"",price:d.price,winner:enName(c,d.winner),t:Date.now()});
+function addLot(rec){
+  LOTS.unshift(rec);
   LOTS=LOTS.slice(0,9);
   try{localStorage.setItem("ikai_lots",JSON.stringify(LOTS))}catch{try{LOTS.slice(5).forEach(l=>l.photo="");localStorage.setItem("ikai_lots",JSON.stringify(LOTS))}catch{}}
-  renderGrid(LOTS[0].t);
+  renderGrid(rec.t);
+}
+function cardHTML(l,cls=""){
+  return `<div class="gc${cls}">${l.photo?`<img class="ph" alt="" src="${l.photo}">`:""}<div class="veil"></div><div class="dots"></div>
+      <div class="top"><img class="logo" src="mvmnt-logo.png" alt="MVMNT"><div class="pr">${fmt(l.price)}<i>YEN</i></div></div>
+      <div class="lotn">LOT ${esc(l.lot)}</div>
+      <div class="bot"><div class="who"><small>SOLD TO</small><b>${esc(l.winner)}</b></div><div class="hatch"></div></div></div>`;
 }
 function renderGrid(newT){
   const g=$("#grid");let h='<div class="gscan"></div>';
   const L=[...LOTS].sort((a,b)=>b.price-a.price||b.t-a.t);   // 落札額の高い順に、左上から
   for(let i=0;i<9;i++){const l=L[i];
     if(!l){h+=`<div class="gc empty"><div class="mid"><img class="logo" src="mvmnt-logo.png" alt="MVMNT"><span>AWAITING LOT</span></div></div>`;continue}
-    h+=`<div class="gc${l.t===newT?" new":""}">${l.photo?`<img class="ph" alt="" src="${l.photo}">`:""}<div class="veil"></div><div class="dots"></div>
-      <div class="top"><img class="logo" src="mvmnt-logo.png" alt="MVMNT"><div class="pr">${fmt(l.price)}<i>YEN</i></div></div>
-      <div class="lotn">LOT ${esc(l.lot)}</div>
-      <div class="bot"><div class="who"><small>SOLD TO</small><b>${esc(l.winner)}</b></div><div class="hatch"></div></div></div>`}
+    h+=cardHTML(l,l.t===newT?" new":"")}
   g.innerHTML=h;
 }
 function gridOpen(){return !$("#grid").hidden}
