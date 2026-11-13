@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&family=Noto+Sans+JP:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Michroma&display=swap">
 <style>
+@font-face{font-family:"Melete";src:url("fonts/Melete-Regular.otf") format("opentype");font-display:swap}
 /* Layout: 16:9モニター1画面。左に常時監視カメラ、右に競売台。下に落札記録の帯。黒地＋蛍光オレンジ（未来救出局と同じ系譜） */
 :root{
   --bk:#0a0a0a; --line:#2b2b2b; --fg:#f1f1f1; --mute:#8c8c8c; --or:#ff5c00; --or-dim:#7a2c00;
@@ -162,8 +163,67 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
 
 .btn{font-family:var(--f-disp);font-weight:900;font-size:clamp(16px,calc(var(--u)*1.3),28px);border:0;cursor:pointer;padding:.7em 1.3em;background:var(--or);color:#000}
 
+/* 全画面の競売：上に世界の見出し、中央に品物、まわりに住人3人 */
+#arena{position:fixed;inset:0;z-index:20;background:radial-gradient(ellipse at 50% 60%,#1a0d05 0%,var(--bk) 60%);display:grid;grid-template-rows:auto minmax(0,1fr);gap:calc(var(--u)*1);
+  padding-block:calc(var(--u)*1.4) calc(var(--u)*1.6);padding-left:max(calc(var(--u)*3),env(safe-area-inset-left,0px));padding-right:max(calc(var(--u)*3),env(safe-area-inset-right,0px));animation:in .4s ease both}
+#arena[hidden]{display:none}
+.ahead{display:flex;justify-content:space-between;align-items:flex-end;gap:calc(var(--u)*2);border-bottom:2px solid var(--or);padding-bottom:calc(var(--u)*.8)}
+.ahead h2{font-family:var(--f-disp);font-weight:900;font-size:clamp(22px,calc(var(--u)*3),64px);line-height:1.2;margin:0;color:var(--or)}
+.ahead p{margin:0;font-size:clamp(12px,calc(var(--u)*1.25),28px);font-weight:700}
+.abody{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:calc(var(--u)*.6) calc(var(--u)*1.5);min-height:0}
+#gaze{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+#gaze line{stroke:var(--or);stroke-width:2;stroke-dasharray:4 10;stroke-linecap:round;opacity:.7;animation:gz 1s linear infinite}
+@keyframes gz{to{stroke-dashoffset:-14}}
+.acenter{grid-column:2;grid-row:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*.7);min-width:0;text-align:center}
+.aphoto{width:calc(var(--u)*31);max-width:100%;aspect-ratio:3/2;border:2px solid var(--or);overflow:hidden;position:relative;transition:width .6s cubic-bezier(.6,0,.3,1);box-shadow:0 0 50px rgba(255,92,0,.25)}
+.aphoto img{width:100%;height:100%;object-fit:cover;display:block}
+.aphoto::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px)}
+#arena.bid .aphoto{width:calc(var(--u)*15)}
+.aitem{font-family:var(--f-disp);font-weight:900;font-size:clamp(20px,calc(var(--u)*2.8),60px);line-height:1.3;margin:0;text-wrap:balance;transition:font-size .5s}
+#arena.bid .aitem{font-size:clamp(15px,calc(var(--u)*1.6),34px)}
+.acap{margin:0;font-family:var(--f-disp);font-weight:700;font-size:clamp(14px,calc(var(--u)*1.5),32px);line-height:1.5;min-height:1.5em;text-wrap:balance}
+#arena.bid .acap{display:none}
+.aprice{display:none;align-items:baseline;gap:.25em;justify-content:center}
+#arena.bid .aprice{display:flex}
+.aprice b{font-family:var(--f-mono);font-weight:700;font-size:clamp(36px,calc(var(--u)*5),110px);line-height:1;color:var(--or);font-variant-numeric:tabular-nums;text-shadow:0 0 24px rgba(255,92,0,.35)}
+.aprice span{font-family:var(--f-disp);font-weight:900;font-size:clamp(14px,calc(var(--u)*1.6),36px);color:var(--or)}
+.aprice small{display:block}
+.alab{display:none;font-family:var(--f-mono);font-size:clamp(9px,calc(var(--u)*.68),15px);letter-spacing:.14em;color:var(--mute)}
+#arena.bid .alab{display:block}
+/* 席（左・右・下） */
+.seat{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*.3);min-width:0;transition:opacity .3s}
+.seat.s0{grid-column:1;grid-row:1}.seat.s1{grid-column:3;grid-row:1}
+.seat.s2{grid-column:1/-1;grid-row:2;flex-direction:row;justify-content:center;align-items:center;gap:calc(var(--u)*1.4);position:relative}
+.seat .fig{height:calc(var(--u)*15);aspect-ratio:3/4;flex:none;position:relative;transition:transform .3s cubic-bezier(.2,1.4,.4,1)}
+.seat.s2 .fig{height:calc(var(--u)*10.5)}
+.fig svg,.fig img{position:absolute;inset:0;width:100%;height:100%}
+.fig img{object-fit:contain}
+.fig svg{fill:none;stroke:var(--or);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+.fig svg .fill{fill:var(--or);stroke:none}
+.seat .nm{display:flex;flex-direction:column;align-items:center;line-height:1.35;text-align:center}
+.seat.s2 .nm{align-items:flex-start;text-align:left}
+.seat .nm b{font-family:var(--f-disp);font-weight:900;font-size:clamp(12px,calc(var(--u)*1.25),28px)}
+.seat .nm em{font-style:normal;font-family:var(--f-mono);font-weight:700;font-size:clamp(12px,calc(var(--u)*1.25),28px);min-height:1.4em;font-variant-numeric:tabular-nums}
+.seat .nm em small{font-family:var(--f-disp);font-size:.6em;letter-spacing:.1em;margin-left:.6em}
+.bub{position:relative;border:2px solid var(--or);background:var(--bk);padding:calc(var(--u)*.7) calc(var(--u)*1);font-family:var(--f-disp);font-weight:900;font-size:clamp(15px,calc(var(--u)*1.9),42px);line-height:1.4;text-align:left;max-width:100%;visibility:hidden;text-wrap:balance}
+.seat.s2 .bub{position:absolute;left:calc(50% + var(--u)*11);top:50%;translate:0 -50%;max-width:calc(var(--u)*30);width:max-content}
+.bub::after{content:"";position:absolute;left:50%;bottom:-11px;width:18px;height:18px;background:var(--bk);border-right:2px solid var(--or);border-bottom:2px solid var(--or);transform:translateX(-50%) rotate(45deg)}
+.seat.s2 .bub::after{left:-11px;bottom:auto;top:50%;transform:translateY(-50%) rotate(135deg)}
+.seat.now .bub{visibility:visible;animation:pop .3s cubic-bezier(.2,1.5,.4,1) both}
+.seat.now .fig{transform:scale(1.1)}
+.seat.now .fig svg{opacity:1;filter:drop-shadow(0 0 10px rgba(255,92,0,.7))}
+.seat.now .nm b,.seat.lead .nm em{color:var(--or)}
+.seat.out .bub{border-color:var(--mute);color:var(--mute)}
+.seat.out .bub::after{border-color:var(--mute)}
+#arena.bid .seat.wait{opacity:.35}
+.seat.gone{opacity:.3}
+.seat.arrive .fig{animation:arrive2 .7s ease-out}
+@keyframes arrive2{0%{filter:brightness(3)}100%{filter:none}}
+.icard.withfig{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*.4) calc(var(--u)*2);align-items:center}
+.icard.withfig .fig{grid-row:1/4;height:calc(var(--u)*15);aspect-ratio:3/4;position:relative}
+
 /* 落札グリッド（Gキー、または ?grid で表示） */
-#grid{position:fixed;inset:0;z-index:30;background:#eef0f3;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:1px;color:#0b0b0c;font-family:"Michroma","JetBrains Mono",sans-serif}
+#grid{position:fixed;inset:0;z-index:30;background:#eef0f3;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:1px;color:#0b0b0c;font-family:"Melete","Michroma","JetBrains Mono",sans-serif}
 #grid[hidden]{display:none}
 .gc{position:relative;overflow:hidden;background:#f6f7f9;min-width:0;min-height:0}
 .gc .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.38) contrast(1.1) brightness(1.2)}
@@ -174,7 +234,7 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
 .gc .top{position:absolute;left:7%;right:5%;top:9%;display:flex;align-items:center;justify-content:space-between;gap:4%}
 .gc .logo{height:calc(var(--u)*1.75);min-height:14px;width:auto;display:block}
 .gc .pr{display:flex;align-items:baseline;gap:.35em;font-size:clamp(14px,calc(var(--u)*2.05),46px);letter-spacing:.08em;line-height:1;white-space:nowrap;font-variant-numeric:tabular-nums}
-.gc .pr i{font-style:normal;font-size:.6em}
+.gc .pr i{font-style:normal;font-size:.5em;letter-spacing:.14em}
 .gc .pr s{text-decoration:none;font-size:.55em;margin-left:.9em;font-family:var(--f-mono);font-weight:400}
 .gc .bot{position:absolute;left:7%;right:5%;bottom:8%;display:flex;justify-content:space-between;align-items:flex-end;gap:4%}
 .gc .who{position:relative;padding-left:0;line-height:1.5;min-width:0}
@@ -232,6 +292,10 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
 <div class="hud r" id="hudR" aria-hidden="true"></div>
 <div class="static" id="static" aria-hidden="true"></div>
 <div id="grid" hidden aria-label="落札した品の一覧"></div>
+<div id="arena" hidden>
+  <div class="ahead"><div><div class="lbl" id="aLot"></div><h2 id="aWorld"></h2><p id="aRule"></p></div><div class="lbl mute" id="aCount"></div></div>
+  <div class="abody" id="abody"></div>
+</div>
 <div class="wrap" id="wrap">
   <header>
     <div class="logo">異界オークション<em>.</em></div>
@@ -347,7 +411,7 @@ async function startCam(){
 function idle(){
   S.phase="watch";S.busy=false;
   cam.classList.remove("seized","lock");
-  S.city=pick(CITY_KEYS.filter(k=>k!==S.city));
+  S.city=pick(CITY_KEYS.filter(k=>k!==S.city));SND.world(S.city);
   const c=CITIES[S.city];
   setMode("● LIVE · 監視中");
   stage.innerHTML=`<div class="lbl">NEXT AUCTION · ANOTHER WORLD</div>
@@ -417,59 +481,100 @@ function normalize(d){
   return d;
 }
 
+/* 仮の人物イラスト：線画のシルエット＋小道具。img/<世界>_<1〜3>.png を置くと、その画像に置き換わる */
+const PROPS={
+  island:['<path d="M44 60l4 8 4-6 4 8 4-6 4 8 4-6 4 8 4-8"/><path d="M60 92l-6 10 6 26 6-26z"/>',
+          '<path class="fill" d="M36 30Q60 4 84 30Z"/><path d="M28 32H92"/><circle cx="60" cy="20" r="3" stroke="#0a0a0a"/>',
+          '<circle cx="33" cy="44" r="9"/><circle cx="87" cy="44" r="9"/><ellipse cx="60" cy="53" rx="11" ry="7"/><path d="M96 140q22-6 14-30q-4-12-14-6"/>'],
+  ninja:['<path d="M38 34H82M82 34l14-7M82 34l15 4"/><path d="M40 52H80"/>',
+         '<path d="M80 28q26 4 20 42"/><path d="M40 52H80"/><path d="M38 34H82"/>',
+         '<path d="M46 60Q60 112 74 60"/><path d="M106 62V152"/><circle cx="106" cy="56" r="5"/>'],
+  zombie:['<path d="M38 30Q60 12 82 30"/><path class="fill" d="M86 98l22-10v26l-22-8z"/>',
+          '<path d="M38 34H82"/><path d="M94 96h16v42h-16"/><path d="M98 108h8"/>',
+          '<path d="M44 102H76V150M44 102l8-12M76 102l-8-12"/><path d="M102 94v40"/><circle cx="102" cy="88" r="6"/>'],
+  kaiju:['<path class="fill" d="M36 40Q36 14 60 14Q84 14 84 40Z"/><circle cx="60" cy="28" r="3" stroke="#0a0a0a"/>',
+         '<path d="M60 92l-5 8 5 26 5-26z"/><rect x="90" y="120" width="22" height="18"/><path d="M96 120v-5h10v5"/>',
+         '<path d="M38 34H82M82 34l10-8M82 34l12 3"/><path d="M44 94L60 124L76 94"/>'],
+  robot:['<circle cx="50" cy="40" r="7"/><circle cx="70" cy="40" r="7"/><path d="M57 40H63M36 40h7M77 40h7"/><path d="M102 96v38"/><path d="M95 92a7 7 0 1 0 14 0"/>',
+         '<path d="M34 48Q34 12 60 12Q86 12 86 48"/><path class="fill" d="M40 38H80V50H40Z"/>',
+         '<path class="fill" d="M36 36Q60 2 84 36Z"/><path d="M104 92v34"/><path d="M96 130a8 8 0 0 0 16 0z"/>'],
+  edo:['<path d="M38 34H82M44 30l6 8M56 30l6 8M68 30l6 8"/><path d="M102 98v36"/><path class="fill" d="M92 90h20v9h-20z"/>',
+       '<path d="M60 22v-12h13"/><path d="M88 112l22-14M88 112l24-4M88 112l22 8M110 98Q117 108 110 120"/>',
+       '<path d="M60 22v-12h13"/><path d="M102 86v40"/><path class="fill" d="M98 126q4 14 8 0z"/>']
+};
+const HAS_IMG={};
+for(const w of CITY_KEYS)for(let i=1;i<=3;i++){const im=new Image();im.onload=()=>{HAS_IMG[`${w}_${i}`]=true};im.src=`img/${w}_${i}.png`}
+function figHTML(world,i,look){   // look: 目線の向き（1＝右、-1＝左、0＝上）
+  const key=`${world}_${i+1}`;
+  if(HAS_IMG[key])return `<div class="fig"><img alt="" src="img/${key}.png"></div>`;
+  const ex=look*4,ey=look===0?-4:0;
+  return `<div class="fig"><svg viewBox="0 0 120 160" aria-hidden="true"><circle cx="60" cy="44" r="22"/><path d="M22 152Q22 94 60 90Q98 94 98 152"/>
+    <circle class="fill" cx="${52+ex}" cy="${44+ey}" r="2.6"/><circle class="fill" cx="${68+ex}" cy="${44+ey}" r="2.6"/>${(PROPS[world]||[])[i]||""}</svg></div>`;
+}
+function drawGaze(){
+  const svg=$("#gaze");if(!svg)return;const B=$("#abody").getBoundingClientRect(),P=$(".aphoto").getBoundingClientRect();let h="";
+  document.querySelectorAll(".seat .fig").forEach((f,i)=>{const r=f.getBoundingClientRect();
+    const x1=r.left+r.width/2-B.left,y1=r.top+r.height*.27-B.top;
+    const x2=(i===0?P.left:i===1?P.right:P.left+P.width/2)-B.left,y2=(i===2?P.bottom:P.top+P.height/2)-B.top;
+    h+=`<line x1="${x1+(i===0?r.width*.25:i===1?-r.width*.25:0)}" y1="${y1-(i===2?r.height*.2:0)}" x2="${x2}" y2="${y2}"/>`});
+  svg.innerHTML=h;
+}
+
 async function runAuction(image,thumb){
-  const c=CITIES[S.city];
+  const c=CITIES[S.city],W=S.city;
   const lot=String(S.lot).padStart(4,"0");
+  const arena=$("#arena");
   S.phase="appraise";
-  stage.innerHTML=`<div class="lothead"><div class="lbl alert">LOT ${lot} · 強制出品</div><div class="lbl mute">${esc(c.name)}</div></div>
-    <div class="appr"><div class="thumb"><img alt="" src="${thumb}"></div><p class="typing" id="typ"><span class="cur"></span></p></div>`;
-  restartAnim();
-  const lines=[`持ち主の同意……省略しました。`,`${c.name}へ送っています。`,`住人たちが品定めをしています。`];
+  // 場面A：撮った写真を、その世界の住人3人が見ている
+  const people=c.residents.slice(0,3).map(r=>({n:r[0],t:r[1]}));
+  $("#aLot").textContent=`LOT ${lot} · 競売会場`;$("#aWorld").textContent=c.name;$("#aRule").textContent=c.rule;$("#aCount").textContent="強制出品";
+  const LOOK=[1,-1,0];
+  const seat=i=>`<div class="seat s${i} wait" id="seat${i}"><div class="bub"></div>${figHTML(W,i,LOOK[i])}<div class="nm"><b>${esc(people[i].n)}</b><em></em></div></div>`;
+  const seat2=`<div class="seat s2 wait" id="seat2">${figHTML(W,2,0)}<div class="nm"><b>${esc(people[2].n)}</b><em></em></div><div class="bub"></div></div>`;
+  $("#abody").innerHTML=`<svg id="gaze"></svg>${seat(0)}
+    <div class="acenter"><div class="aphoto"><img alt="" src="${S.photo||thumb}"></div><h3 class="aitem" id="aItem"></h3><p class="acap" id="aCap"><span class="cur"></span></p>
+      <div><div class="aprice"><b id="pr">0</b><span>${esc(c.unit)}</span></div><div class="alab">いまの最高値</div></div></div>
+    ${seat(1)}${seat2}`;
+  arena.classList.remove("bid");arena.hidden=false;
+  requestAnimationFrame(()=>requestAnimationFrame(drawGaze));
+  const lines=[`${c.name}の住人が、あなたの物を見ています。`,`「これは、何に使える…？」`];
   let alive=true;
-  const typer=(async()=>{const el=$("#typ");let done="";
-    for(const t of lines){for(let i=1;i<=t.length&&alive;i++){el.innerHTML=done+esc(t.slice(0,i))+'<span class="cur"></span>';if(i%2)SND.type();await sleep("。、…".includes(t[i-1])?260:55)}done+=esc(t)+"<br>";if(!alive)return;await sleep(500)}})();
+  const typer=(async()=>{const el=$("#aCap");
+    for(const t of lines){for(let i=1;i<=t.length&&alive;i++){el.innerHTML=esc(t.slice(0,i))+'<span class="cur"></span>';if(i%2)SND.type();await sleep("。、…？".includes(t[i-1])?260:60)}if(!alive)return;await sleep(1400)}})();
   let d;
   try{d=await appraise(image)}
-  catch(e){alive=false;await typer;return failed(e)}
+  catch(e){alive=false;await typer;arena.hidden=true;return failed(e)}
   alive=false;await typer;
-  // 場面1：何が出品されたか
+  // 鑑定の結果：品名と、この世界での値打ち
   S.phase="bidding";setMode("▲ APPRAISED");
   pageGlitch();
-  stage.innerHTML=`<div class="lbl">LOT ${lot} · ${esc(c.name)}</div>
-    <div class="reveal"><div class="thumb"><img alt="" src="${thumb}"></div><h2 class="big-item" id="itm">${esc(d.item)}</h2></div>
-    <p class="big-sub">${esc(d.appraisal)}</p>`;
-  restartAnim();glitch($("#itm"));
+  $("#aItem").textContent=d.item;$("#aCap").textContent=d.appraisal;glitch($("#aItem"));SND.intro();
   await sleep(5000);
 
-  // 場面2：入札
+  // 場面B：全画面の競売。品物は中央に小さく、3人がそれを囲む
   setMode("▲ BIDDING");
-  const names=c.residents.map(r=>r[0]);
-  d.bids.forEach(b=>{if(!names.includes(b.who)&&names.length<4)names.push(b.who)});
-  const people=names.slice(0,3).map(n=>({n,t:(c.residents.find(r=>r[0]===n)||[n,""])[1]}));
-  stage.innerHTML=`<div class="lothead"><div class="mini"><div class="thumb"><img alt="" src="${thumb}"></div><b>${esc(d.item)}</b></div><div class="lbl mute" id="pc">入札 0件</div></div>
-    <div class="bidders">${people.map((p,i)=>`<div class="bdr hide" id="bd${i}"><b>${esc(p.n)}</b><em></em></div>`).join("")}</div>
-    <div class="speech" id="sp"><span class="who">入札開始</span><p class="say">誰が最初に手をあげる？</p></div>
-    <div class="price"><b id="pr">0</b><span>${esc(c.unit)}</span><small>いまの最高値</small></div>`;
-  restartAnim();
-  await sleep(1800);
+  $("#gaze").innerHTML="";arena.classList.add("bid");$("#aCount").textContent="入札 0件";
+  await sleep(1600);
   let prev=0,met=0;
   for(const [i,b] of d.bids.entries()){
     const up=b.price>prev&&!b.out;
     const k=people.findIndex(p=>p.n===b.who);
-    const card=k>=0?$("#bd"+k):null;
-    if(card&&card.classList.contains("hide")){met++;await introduce(people[k],card,met,people.length)}
-    document.querySelectorAll(".bdr").forEach(x=>x.classList.remove("now","lead"));
-    if(card){card.classList.add("now");if(up){card.querySelector("em").textContent=fmt(b.price)+" "+c.unit;card.classList.add("lead")}else card.classList.add("gone")}
-    const sp=$("#sp");sp.className="speech"+(up?"":" out");void sp.offsetWidth;sp.classList.add("pop");
-    sp.innerHTML=`<span class="who">${esc(b.who)}${up?`　→ ${fmt(b.price)} ${esc(c.unit)}`:"　→ 降りる"}</span><p class="say">「${esc(b.line)}」</p>`;
-    $("#pc").textContent=`入札 ${i+1}件`;
+    const st=k>=0?$("#seat"+k):null;
+    if(st&&st.classList.contains("wait")){met++;await introduce(people[k],st,met,people.length,W,k)}
+    document.querySelectorAll(".seat").forEach(x=>x.classList.remove("now","lead","out"));
+    if(st){void st.offsetWidth;st.classList.add("now");st.querySelector(".bub").textContent="「"+b.line+"」";
+      if(up){st.querySelector("em").innerHTML=`${fmt(b.price)} ${esc(c.unit)}<small>最高値</small>`;st.classList.add("lead")}else st.classList.add("out")}
+    document.querySelectorAll(".seat:not(.lead) em small").forEach(x=>x.remove());
+    $("#aCount").textContent=`入札 ${i+1}件`;
     if(up){tick($("#pr"),prev,b.price);prev=b.price;SND.bid(i)}else SND.out();
     await sleep(rnd(3800,4600));
+    if(st&&!up)st.classList.add("gone");
   }
 
-  // 場面3：落札の瞬間
+  // 落札の瞬間（通常の画面に戻る）
   setMode("★ SOLD");
   SND.hammer();
+  arena.hidden=true;
   pageGlitch();
   stage.innerHTML=`<div class="lbl">LOT ${lot} · 落札</div>
     <h2 class="big-item" id="wn"><em style="font-style:normal;color:var(--or)">${esc(d.winner)}</em>が<br>落札しました</h2>
@@ -480,21 +585,21 @@ async function runAuction(image,thumb){
   sold(d,thumb,lot,c);
 }
 
-/* 入札者が初めて出てきたとき：中央に大きく紹介 → 小さくなって自分の席へ */
-async function introduce(p,card,n,total){
+/* 入札者が初めて入札するとき：中央に大きく紹介 → 小さくなって自分の席へ */
+async function introduce(p,st,n,total,world,k){
   const ov=document.createElement("div");ov.className="intro";
-  ov.innerHTML=`<div class="icard"><span class="lbl">入札者 登場 · ${n}/${total}</span><b>${esc(p.n)}</b><p>${esc(p.t)}</p></div>`;
-  stage.append(ov);SND.intro();
-  await sleep(2600);
-  const ic=ov.querySelector(".icard"),a=ic.getBoundingClientRect(),z=card.getBoundingClientRect();
-  const dx=(z.left+z.width/2)-(a.left+a.width/2),dy=(z.top+z.height/2)-(a.top+a.height/2),sc=Math.max(.15,z.width/a.width);
+  ov.innerHTML=`<div class="icard withfig">${figHTML(world,k,0)}<span class="lbl">入札者 登場 · ${n}/${total}</span><b>${esc(p.n)}</b><p>${esc(p.t)}</p></div>`;
+  $("#arena").append(ov);SND.intro();
+  await sleep(2400);
+  const ic=ov.querySelector(".icard"),a=ic.getBoundingClientRect(),z=st.querySelector(".fig").getBoundingClientRect();
+  const dx=(z.left+z.width/2)-(a.left+a.width/2),dy=(z.top+z.height/2)-(a.top+a.height/2),sc=Math.max(.12,z.height/a.height);
   ic.style.animation="none";
   const anim=ic.animate([{transform:"none",opacity:1},{transform:`translate(${dx}px,${dy}px) scale(${sc})`,opacity:.2}],{duration:550,easing:"cubic-bezier(.6,0,.3,1)",fill:"forwards"});
   ov.animate([{background:"rgba(10,10,10,.9)"},{background:"rgba(10,10,10,0)"}],{duration:550,fill:"forwards"});
   await anim.finished.catch(()=>{});
   ov.remove();
-  card.classList.remove("hide");card.classList.add("arrive");
-  await sleep(500);
+  st.classList.remove("wait");st.classList.add("arrive");
+  await sleep(400);
 }
 function tick(el,from,to){const t0=performance.now(),dur=650;const st=t=>{const k=Math.min(1,(t-t0)/dur);el.textContent=fmt(from+(to-from)*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(st)};requestAnimationFrame(st)}
 
@@ -592,16 +697,50 @@ const SND=(()=>{
     master=ac.createGain();master.gain.value=.8;master.connect(ac.destination);
     const dl=ac.createDelay(1),fb=ac.createGain(),wet=ac.createGain();dl.delayTime.value=.28;fb.gain.value=.25;wet.gain.value=.2;dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(master);
     bgm=ac.createGain();bgm.gain.value=0;bgm.connect(master);bgm.connect(dl);
-    // 明るく弾むループ（C → Am → F → G）
-    const CH=[[261.6,329.6,392,523.3],[220,261.6,329.6,440],[174.6,220,261.6,349.2],[196,246.9,293.7,392]];
-    const PENT=[523.3,587.3,659.3,784,880,1046.5];let st=0;
-    arp=setInterval(()=>{if(!on||ac.state!=="running")return;const c=CH[Math.floor(st/16)%4],k=st%16;
-      if(k%2===0)tone(c[[0,1,2,3,2,1,2,1][k/2]]*2,.28,{type:"triangle",vol:.04,bus:bgm});
-      if(k===0||k===6||k===10)tone(c[0]/2,.3,{type:"sine",vol:.13,bus:bgm});
-      if(k%4===2)noise(.04,{vol:.012,f:7000,q:.8,type:"highpass"});
-      if(k%4===0&&Math.random()<.45)tone(PENT[Math.floor(Math.random()*PENT.length)],.7,{type:"sine",vol:.03,bus:bgm});
-      st++},140);
+    loop();
   }
+  /* 世界ごとの曲。step(k,c) が1拍ぶんの音を鳴らす（k＝拍の番号、c＝その小節の和音） */
+  const pk=a=>a[Math.floor(Math.random()*a.length)];
+  const MUS={
+    // 無人島：ウクレレ風ののんびりした曲と波の音
+    island:{ms:150,ch:[[261.6,329.6,392,523.3],[220,261.6,329.6,440],[174.6,220,261.6,349.2],[196,246.9,293.7,392]],step(k,c){const s=k%8;
+      if([0,3,4,6].includes(s))c.forEach((f,i)=>tone(f*2,.35,{type:"triangle",vol:s===0?.035:.02,at:i*.018,bus:bgm}));
+      if(s===0)tone(c[0]/2,.4,{vol:.12,bus:bgm});if(s===4)tone(c[2]/2,.3,{vol:.08,bus:bgm});
+      if(k%32===0)noise(2.6,{vol:.03,f:500,q:.3,type:"lowpass"});
+      if(s===2&&Math.random()<.4)tone(pk([784,880,1046.5,1174.7]),.5,{vol:.03,bus:bgm})}},
+    // 忍者の里：琴と和太鼓風。音の間を大きく取る
+    ninja:{ms:170,step(k){const s=k%16,sc=[293.7,311.1,392,440,466.2,587.3];
+      if([0,3,6,8,11,14].includes(s)&&Math.random()<.8)tone(pk(sc)*(Math.random()<.3?.5:1),.7,{type:"sawtooth",vol:.028,bus:bgm});
+      if(s===0||s===10){tone(95,.35,{vol:.22,slide:48});noise(.06,{vol:.05,f:300,type:"lowpass"})}
+      if(k%32===16){const f=pk([587.3,440,466.2]);tone(f,2.2,{vol:.03,slide:f*.97,bus:bgm})}}},
+    // ゾンビ：不気味だけどコミカルなワルツ
+    zombie:{ms:190,bar:6,ch:[[110,220,261.6,329.6],[110,220,261.6,329.6],[146.8,220,293.7,349.2],[164.8,207.7,246.9,329.6]],step(k,c){const s=k%6;
+      if(s===0)tone(c[0],.45,{type:"triangle",vol:.14,bus:bgm});
+      if(s===2||s===4)c.slice(1).forEach(f=>tone(f,.18,{type:"square",vol:.014,bus:bgm}));
+      if(s===0&&Math.floor(k/6)%2===0){const f=pk([440,523.3,622.3,659.3,880]);tone(f,1.0,{vol:.035,slide:f*1.06,bus:bgm})}}},
+    // 怪獣：特撮映画風の重い行進曲
+    kaiju:{ms:160,step(k){const s=k%4,b=Math.floor(k/4)%8,f=[82.4,82.4,87.3,82.4,82.4,82.4,98,92.5][b];
+      if(s===0){tone(f,.5,{type:"sawtooth",vol:.045,bus:bgm});tone(f*2,.5,{type:"sawtooth",vol:.025,bus:bgm});if(b%2===0)tone(70,.5,{vol:.24,slide:45})}
+      if(s===2)noise(.08,{vol:.04,f:2500});if(s===3)noise(.05,{vol:.025,f:2500});
+      if(k%32===24)[329.6,392,493.9].forEach((x,i)=>tone(x,.5,{type:"sawtooth",vol:.022,at:i*.16,bus:bgm}))}},
+    // 巨大ロボ：シンセのヒーローもの主題歌風
+    robot:{ms:125,ch:[[174.6,220,261.6],[196,246.9,293.7],[220,261.6,329.6],[220,261.6,329.6]],step(k,c){const s=k%16;
+      if(k%4===0)tone(130,.25,{vol:.2,slide:45});
+      if(k%2===0)tone(c[0]/2,.14,{type:"square",vol:.03,bus:bgm});
+      tone(c[k%3]*2,.1,{type:"square",vol:.014,bus:bgm});
+      if(k%4===2)noise(.03,{vol:.012,f:8000,type:"highpass"});
+      if(s===0)tone(c[2]*4,.9,{type:"triangle",vol:.04,bus:bgm});if(s===12)tone(c[1]*4,.4,{type:"triangle",vol:.035,bus:bgm})}},
+    // 江戸：三味線と祭囃子風
+    edo:{ms:165,step(k){const s=k%16,sc=[293.7,329.6,392,440,493.9,587.3];
+      if([0,2,3,6,8,10,11,14].includes(s)){const f=pk(sc);tone(f,.22,{type:"square",vol:.028,slide:f*.98,bus:bgm})}
+      if([0,3,4,6].includes(k%8)){tone(2093,.08,{vol:.018});tone(3136,.06,{vol:.01})}
+      if(k%8===0||k%8===5)tone(100,.3,{vol:.2,slide:50});
+      if(k%32===8)tone(pk([880,987.8,1174.7]),1.6,{vol:.03,bus:bgm})}}
+  };
+  let world="island",beat=0;
+  function loop(){const m=MUS[world];
+    if(on&&ac.state==="running"){m.step(beat,m.ch?m.ch[Math.floor(beat/(m.bar||16))%m.ch.length]:null);beat++}
+    arp=setTimeout(loop,m.ms)}
   function tone(freq,dur,{type="sine",vol=.3,at=0,slide=0,bus=master}={}){
     if(!ac||!on)return;const t=ac.currentTime+at,o=ac.createOscillator(),g=ac.createGain();
     o.type=type;o.frequency.setValueAtTime(freq,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+dur);
@@ -629,6 +768,7 @@ const SND=(()=>{
     hammer(){tone(90,.3,{vol:.55,slide:45});noise(.12,{vol:.45,f:900,q:.8});tone(90,.3,{vol:.45,slide:45,at:.32});noise(.12,{vol:.35,f:900,q:.8,at:.32})},
     stamp(){[523.3,659.3,784,1046.5].forEach((f,i)=>tone(f,.5,{type:"triangle",vol:.08,at:i*.1}))},
     intro(){[392,523.3,659.3].forEach((f,i)=>tone(f,.35,{type:"triangle",vol:.07,at:i*.07}));noise(.2,{vol:.05,f:4000,q:.5})},
+    world(w){if(MUS[w]&&w!==world){world=w;beat=0}},
     error(){tone(330,.25,{type:"sawtooth",vol:.1,slide:165});tone(220,.4,{type:"sawtooth",vol:.1,at:.22,slide:110})}
   };
 })();
@@ -648,7 +788,7 @@ function renderGrid(newT){
   for(let i=0;i<9;i++){const l=LOTS[i];
     if(!l){h+=`<div class="gc empty"><div class="mid"><img class="logo" src="mvmnt-logo.png" alt="MVMNT"><span>AWAITING LOT</span></div></div>`;continue}
     h+=`<div class="gc${l.t===newT?" new":""}">${l.photo?`<img class="ph" alt="" src="${l.photo}">`:""}<div class="veil"></div><div class="dots"></div>
-      <div class="top"><img class="logo" src="mvmnt-logo.png" alt="MVMNT"><div class="pr"><i>¥</i>${fmt(l.price)}</div></div>
+      <div class="top"><img class="logo" src="mvmnt-logo.png" alt="MVMNT"><div class="pr">${fmt(l.price)}<i>YEN</i></div></div>
       <div class="lotn">LOT ${esc(l.lot)}</div>
       <div class="bot"><div class="who"><small>SOLD TO</small><b>${esc(l.winner)}</b></div><div class="hatch"></div></div></div>`}
   g.innerHTML=h;
