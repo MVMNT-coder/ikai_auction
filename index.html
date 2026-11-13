@@ -785,7 +785,8 @@ function addLot(d,c,lot){
 }
 function renderGrid(newT){
   const g=$("#grid");let h='<div class="gscan"></div>';
-  for(let i=0;i<9;i++){const l=LOTS[i];
+  const L=[...LOTS].sort((a,b)=>b.price-a.price||b.t-a.t);   // 落札額の高い順に、左上から
+  for(let i=0;i<9;i++){const l=L[i];
     if(!l){h+=`<div class="gc empty"><div class="mid"><img class="logo" src="mvmnt-logo.png" alt="MVMNT"><span>AWAITING LOT</span></div></div>`;continue}
     h+=`<div class="gc${l.t===newT?" new":""}">${l.photo?`<img class="ph" alt="" src="${l.photo}">`:""}<div class="veil"></div><div class="dots"></div>
       <div class="top"><img class="logo" src="mvmnt-logo.png" alt="MVMNT"><div class="pr">${fmt(l.price)}<i>YEN</i></div></div>
