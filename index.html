@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>異界オークション</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&family=Noto+Sans+JP:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@700;900&family=Noto+Sans+JP:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Michroma&display=swap">
 <style>
 /* Layout: 16:9モニター1画面。左に常時監視カメラ、右に競売台。下に落札記録の帯。黒地＋蛍光オレンジ（未来救出局と同じ系譜） */
 :root{
@@ -162,6 +162,34 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
 
 .btn{font-family:var(--f-disp);font-weight:900;font-size:clamp(16px,calc(var(--u)*1.3),28px);border:0;cursor:pointer;padding:.7em 1.3em;background:var(--or);color:#000}
 
+/* 落札グリッド（Gキー、または ?grid で表示） */
+#grid{position:fixed;inset:0;z-index:30;background:#eef0f3;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:1px;color:#0b0b0c;font-family:"Michroma","JetBrains Mono",sans-serif}
+#grid[hidden]{display:none}
+.gc{position:relative;overflow:hidden;background:#f6f7f9;min-width:0;min-height:0}
+.gc .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.38) contrast(1.1) brightness(1.2)}
+.gc .veil{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(246,247,249,.94) 0,rgba(246,247,249,.72) 17%,rgba(246,247,249,0) 34%,rgba(246,247,249,0) 62%,rgba(246,247,249,.8) 86%,rgba(246,247,249,.95) 100%),
+  radial-gradient(ellipse at center,rgba(246,247,249,0) 45%,rgba(246,247,249,.55) 100%)}
+.gc .dots{position:absolute;inset:0;pointer-events:none;opacity:.5;background-image:radial-gradient(rgba(11,11,12,.16) .6px,transparent .7px);background-size:5px 5px;mix-blend-mode:multiply}
+.gc .top{position:absolute;left:7%;right:5%;top:9%;display:flex;align-items:center;justify-content:space-between;gap:4%}
+.gc .logo{height:calc(var(--u)*1.75);min-height:14px;width:auto;display:block}
+.gc .pr{display:flex;align-items:baseline;gap:.35em;font-size:clamp(14px,calc(var(--u)*2.05),46px);letter-spacing:.08em;line-height:1;white-space:nowrap;font-variant-numeric:tabular-nums}
+.gc .pr i{font-style:normal;font-size:.6em}
+.gc .pr s{text-decoration:none;font-size:.55em;margin-left:.9em;font-family:var(--f-mono);font-weight:400}
+.gc .bot{position:absolute;left:7%;right:5%;bottom:8%;display:flex;justify-content:space-between;align-items:flex-end;gap:4%}
+.gc .who{position:relative;padding-left:0;line-height:1.5;min-width:0}
+.gc .who::before{content:"";position:absolute;left:-.2em;top:-1.5em;width:1px;height:1.6em;background:#0b0b0c;transform:rotate(38deg);transform-origin:bottom left;opacity:.6}
+.gc .who small{display:block;font-size:clamp(7px,calc(var(--u)*.56),13px);letter-spacing:.14em;opacity:.6}
+.gc .who b{display:block;font-weight:400;font-size:clamp(9px,calc(var(--u)*.78),18px);letter-spacing:.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gc .hatch{flex:none;width:calc(var(--u)*2.2);height:calc(var(--u)*.6);min-height:6px;opacity:.5;transform:skewX(-28deg);background:repeating-linear-gradient(90deg,#0b0b0c 0 2px,transparent 2px calc(var(--u)*.5))}
+.gc .lotn{position:absolute;right:5%;top:50%;transform:translateY(-50%) rotate(90deg);transform-origin:right center;font-family:var(--f-mono);font-size:clamp(7px,calc(var(--u)*.5),11px);letter-spacing:.2em;opacity:.35;white-space:nowrap}
+.gc.empty .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1em;opacity:.28}
+.gc.empty .mid span{font-size:clamp(8px,calc(var(--u)*.6),13px);letter-spacing:.3em}
+.gc.new{animation:gnew 1.1s steps(1) both}
+@keyframes gnew{0%{filter:invert(1)}12%{filter:none;transform:translateX(-6px)}24%{filter:invert(1);transform:translateX(5px)}36%{filter:none;transform:none}48%{filter:contrast(1.6)}60%{filter:none}}
+.gscan{position:absolute;left:0;right:0;height:1px;background:rgba(11,11,12,.25);animation:gscan 7s linear infinite;pointer-events:none;z-index:2}
+@keyframes gscan{from{top:-1%}to{top:101%}}
+
 /* 背景・HUD・グリッチ */
 #bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
 .hud{position:fixed;z-index:0;pointer-events:none;font-family:var(--f-mono);font-size:clamp(10px,calc(var(--u)*.62),14px);line-height:1.6;letter-spacing:.08em;color:var(--or);opacity:.4;font-variant-numeric:tabular-nums;white-space:pre}
@@ -203,6 +231,7 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
 <canvas id="bg" aria-hidden="true"></canvas>
 <div class="hud r" id="hudR" aria-hidden="true"></div>
 <div class="static" id="static" aria-hidden="true"></div>
+<div id="grid" hidden aria-label="落札した品の一覧"></div>
 <div class="wrap" id="wrap">
   <header>
     <div class="logo">異界オークション<em>.</em></div>
@@ -253,17 +282,17 @@ function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt
 /* 競売が開かれる世界（GAS側にも同じ設定がある）。誰もが知っている物語のお約束でできている */
 const CITIES={
   island:{name:"無人島サバイバル",code:"SOS / DAY 1095",unit:"円",rule:"船が難破して流れついた島。3年たっても助けが来ない。火・水・刃物になる物が何より大事。",
-    residents:[["漂流3年目の元会社員","島暮らしに慣れてきた"],["救助を待つ船長","合図に使える物がほしい"],["島のサル","光る物が大好き"]]},
+    residents:[["漂流3年目の元会社員","島暮らしに慣れてきた","CASTAWAY SALARYMAN"],["救助を待つ船長","合図に使える物がほしい","THE STRANDED CAPTAIN"],["島のサル","光る物が大好き","ISLAND MONKEY"]]},
   ninja:{name:"忍者の里",code:"SHINOBI",unit:"円",rule:"山奥に隠れた忍者の里。音を立てない物、隠せる物、投げられる物ほど役に立つ。",
-    residents:[["見習い忍者","早く一人前になりたい"],["くノ一","変装の道具を探している"],["里の長老","里の宝を集めている"]]},
+    residents:[["見習い忍者","早く一人前になりたい","NINJA TRAINEE"],["くノ一","変装の道具を探している","THE KUNOICHI"],["里の長老","里の宝を集めている","VILLAGE ELDER"]]},
   zombie:{name:"ゾンビがあふれた世界",code:"SURVIVORS: 37",unit:"円",rule:"町はゾンビだらけ。生き残った人はショッピングモールに立てこもっている。長持ちする物、音が出ない物が大事。",
-    residents:[["モールのリーダー","みんなを守る物がほしい"],["物資の調達係","外に出る役。身を守りたい"],["元ホームセンター店員","道具の使い方にうるさい"]]},
+    residents:[["モールのリーダー","みんなを守る物がほしい","MALL LEADER"],["物資の調達係","外に出る役。身を守りたい","THE SCAVENGER"],["元ホームセンター店員","道具の使い方にうるさい","HARDWARE CLERK"]]},
   kaiju:{name:"怪獣が毎週来る街",code:"KAIJU / WEEKLY",unit:"円",rule:"毎週日曜に怪獣が現れて街を壊していく。丈夫な物、すぐ持って逃げられる物ほど値打ちがある。",
-    residents:[["防衛隊の新人隊員","怪獣にまだ一度も勝てていない"],["怪獣保険の営業マン","壊れない物に目がない"],["商店街の会長","毎週お店を建て直している"]]},
+    residents:[["防衛隊の新人隊員","怪獣にまだ一度も勝てていない","DEFENSE ROOKIE"],["怪獣保険の営業マン","壊れない物に目がない","KAIJU INSURER"],["商店街の会長","毎週お店を建て直している","MARKET CHAIRMAN"]]},
   robot:{name:"巨大ロボットがある世界",code:"UNIT-01 / 18m",unit:"円",rule:"身長18メートルの巨大ロボットが街を守っている。人間の小さな道具は、ロボの部品やお守りとして重宝される。",
-    residents:[["ロボの整備士","細かい部品が足りない"],["新人パイロット","操縦席でお守りがほしい"],["基地の食堂のおばちゃん","隊員みんなのお母さん役"]]},
+    residents:[["ロボの整備士","細かい部品が足りない","MECH ENGINEER"],["新人パイロット","操縦席でお守りがほしい","ROOKIE PILOT"],["基地の食堂のおばちゃん","隊員みんなのお母さん役","CANTEEN MAMA"]]},
   edo:{name:"江戸時代",code:"EDO / 1825",unit:"円",rule:"電気もプラスチックもない江戸の町。今の道具は、見たことのない不思議な品に見える。",
-    residents:[["長屋の大工","便利な道具に目がない"],["呉服屋の若旦那","珍しい品で客を呼びたい"],["浮世絵師","新しい題材を探している"]]}
+    residents:[["長屋の大工","便利な道具に目がない","EDO CARPENTER"],["呉服屋の若旦那","珍しい品で客を呼びたい","KIMONO HEIR"],["浮世絵師","新しい題材を探している","UKIYO-E PAINTER"]]}
 };
 const CITY_KEYS=Object.keys(CITIES);
 
@@ -354,13 +383,14 @@ async function shoot(){
   const px=fx.getImageData(0,0,w,h).data;let sum=0;for(let i=0;i<px.length;i+=4*97)sum+=px[i]+px[i+1]+px[i+2];
   if(sum/(px.length/(4*97))/3<14){S.busy=false;S.phase="watch";cam.classList.remove("lock");return schedule()}
   const jpeg=freeze.toDataURL("image/jpeg",.82);
-  const thumb=square(freeze,360);
+  const thumb=square(freeze,360);S.photo=crop32(freeze,720);
   S.phase="seized";cam.classList.remove("lock");cam.classList.add("seized");
   const f=document.createElement("div");f.className="flash";document.body.append(f);setTimeout(()=>f.remove(),800);
   SND.shutter();setMode("■ SEIZED · 出品手続き中");
   await sleep(700);pageGlitch();
   await runAuction(jpeg.split(",")[1],thumb);
 }
+function crop32(src,w){const h=Math.round(w*2/3);let sw=src.width,sh=Math.round(sw*2/3);if(sh>src.height){sh=src.height;sw=Math.round(sh*1.5)}const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(src,(src.width-sw)/2,(src.height-sh)/2,sw,sh,0,0,w,h);return c.toDataURL("image/jpeg",.8)}
 function square(src,size){const s=Math.min(src.width,src.height);const c=document.createElement("canvas");c.width=c.height=size;c.getContext("2d").drawImage(src,(src.width-s)/2,(src.height-s)/2,s,s,0,0,size,size);return c.toDataURL("image/jpeg",.75)}
 
 /* ===== 鑑定（GAS経由でClaude、なければ模擬） ===== */
@@ -484,7 +514,7 @@ function sold(d,thumb,lot,c){
   if(CFG.qrUrl&&window.QRCode){try{new QRCode($("#qr"),{text:CFG.qrUrl,width:256,height:256,colorDark:"#000",colorLight:"#fff",correctLevel:QRCode.CorrectLevel.M})}catch{}}
   setTimeout(()=>SND.stamp(),500);
   const bar=$("#cbar");bar.animate([{transform:"scaleX(1)"},{transform:"scaleX(0)"}],{duration:CFG.certSec*1000,easing:"linear",fill:"forwards"});
-  addLog(thumb,d,c);
+  addLog(thumb,d,c);addLot(d,c,lot);
   S.lot++;try{localStorage.setItem("ikai_lot",String(S.lot))}catch{}setLot();
   setTimeout(()=>{pageGlitch();idle()},CFG.certSec*1000);
 }
@@ -598,14 +628,39 @@ const SND=(()=>{
   };
 })();
 
-/* スタッフ用キー：Space＝今すぐ撮る、F＝全画面 */
+/* ===== 落札グリッド：最新9件を、写真＋落札額＋落札者（英語名）＋ロゴで並べる ===== */
+const GRID_ONLY=new URLSearchParams(location.search).has("grid");
+let LOTS=[];try{LOTS=JSON.parse(localStorage.getItem("ikai_lots")||"[]")}catch{}
+function enName(c,winner){const r=c.residents.find(r=>r[0]===winner);return r&&r[2]?r[2]:String(winner).toUpperCase()}
+function addLot(d,c,lot){
+  LOTS.unshift({lot,photo:S.photo||"",price:d.price,winner:enName(c,d.winner),t:Date.now()});
+  LOTS=LOTS.slice(0,9);
+  try{localStorage.setItem("ikai_lots",JSON.stringify(LOTS))}catch{try{LOTS.slice(5).forEach(l=>l.photo="");localStorage.setItem("ikai_lots",JSON.stringify(LOTS))}catch{}}
+  renderGrid(LOTS[0].t);
+}
+function renderGrid(newT){
+  const g=$("#grid");let h='<div class="gscan"></div>';
+  for(let i=0;i<9;i++){const l=LOTS[i];
+    if(!l){h+=`<div class="gc empty"><div class="mid"><img class="logo" src="mvmnt-logo.png" alt="MVMNT"><span>AWAITING LOT</span></div></div>`;continue}
+    h+=`<div class="gc${l.t===newT?" new":""}">${l.photo?`<img class="ph" alt="" src="${l.photo}">`:""}<div class="veil"></div><div class="dots"></div>
+      <div class="top"><img class="logo" src="mvmnt-logo.png" alt="MVMNT"><div class="pr"><i>¥</i>${fmt(l.price)}<s>&gt;</s></div></div>
+      <div class="lotn">LOT ${esc(l.lot)}</div>
+      <div class="bot"><div class="who"><small>SOLD TO</small><b>${esc(l.winner)}</b></div><div class="hatch"></div></div></div>`}
+  g.innerHTML=h;
+}
+function toggleGrid(on){const g=$("#grid");g.hidden=on===undefined?!g.hidden:!on;if(!g.hidden)renderGrid()}
+addEventListener("storage",e=>{if(e.key==="ikai_lots"){try{LOTS=JSON.parse(e.newValue||"[]")}catch{}renderGrid(LOTS[0]?.t)}});
+
+/* スタッフ用キー：Space＝今すぐ撮る、F＝全画面、G＝落札グリッド */
 addEventListener("keydown",e=>{
   if(e.code==="Space"&&S.phase==="watch"){e.preventDefault();clearTimeout(S.timer);S.nextAt=performance.now()+CFG.lockSec*1000;lockOn()}
+  if(e.key==="g"||e.key==="G")toggleGrid();
   if(e.key==="f"||e.key==="F"){document.fullscreenElement?document.exitFullscreen?.():document.documentElement.requestFullscreen?.().catch(()=>{})}
 });
 
 /* 起動：ページを開いた瞬間からカメラが回る */
 (async()=>{
+  if(GRID_ONLY){toggleGrid(true);return}   // ?grid：2台目のモニター用。カメラは起動せず、グリッドだけ表示
   setLot();
   stage.innerHTML=`<div class="lbl alert">BOOT · CAM-01</div><h1 class="idle-h">監視カメラを<br><em>起動しています。</em></h1>`;
   if(await startCam())idle();
