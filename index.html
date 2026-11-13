@@ -310,6 +310,45 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
   .hud-cam{height:auto;width:100%}
   .hud.r{display:none}
 }
+
+/* ===== トーン調整：グリッドの言葉づかい（ロゴ・Melete・細い線）を黒い側にも入れる ===== */
+.lbl,#lotno,.snd{font-family:"Melete",var(--f-mono);letter-spacing:.2em}
+.price b,.aprice b,.won-price,.seat .nm em,.bdr em{font-family:"Melete",var(--f-mono);letter-spacing:.05em;text-shadow:0 0 10px rgba(255,92,0,.16)}
+.aprice b{font-size:clamp(30px,calc(var(--u)*3.6),80px)}
+.seat .nm em{font-size:clamp(11px,calc(var(--u)*1.05),24px)}
+header,.ahead,.rband{border-width:1px}
+.bub,.aphoto,.icard{border-width:1px}
+.bub::after{border-right-width:1px;border-bottom-width:1px}
+.aphoto{box-shadow:0 0 22px rgba(255,92,0,.12)}
+.icard{box-shadow:0 0 40px rgba(255,92,0,.14)}
+.hud-cam.lock{box-shadow:0 0 22px rgba(255,92,0,.22)}
+.logo{display:flex;align-items:center;gap:calc(var(--u)*1)}
+.hlogo{height:calc(var(--u)*1.35);min-height:12px;width:auto;filter:invert(1);display:block}
+.logo .sl{width:1px;height:calc(var(--u)*1.8);background:var(--fg);opacity:.5;transform:rotate(24deg)}
+.hat{display:inline-block;width:calc(var(--u)*2.2);height:calc(var(--u)*.6);min-height:6px;opacity:.6;transform:skewX(-28deg);background:repeating-linear-gradient(90deg,var(--or) 0 2px,transparent 2px calc(var(--u)*.5))}
+.ahead .ar{display:flex;align-items:center;gap:calc(var(--u)*1)}
+
+/* 結果ページ用の「黒いフィルター」のカード（グリッドは白のまま） */
+.gc.dark{background:#0c0c0d;color:#f1f1f1}
+.gc.dark .ph{filter:grayscale(.8) contrast(1.2) brightness(.7)}
+.gc.dark .veil{background:linear-gradient(180deg,rgba(10,10,10,.95) 0,rgba(10,10,10,.72) 17%,rgba(10,10,10,0) 36%,rgba(10,10,10,0) 60%,rgba(10,10,10,.8) 86%,rgba(10,10,10,.96) 100%),radial-gradient(ellipse at center,rgba(10,10,10,0) 45%,rgba(10,10,10,.6) 100%)}
+.gc.dark .dots{background-image:radial-gradient(rgba(255,255,255,.16) .6px,transparent .7px);mix-blend-mode:screen}
+.gc.dark .logo{filter:invert(1)}
+.gc.dark .pr{color:var(--or)}
+.gc.dark .who::before{background:#f1f1f1}
+.gc.dark .hatch{background:repeating-linear-gradient(90deg,var(--or) 0 2px,transparent 2px calc(var(--u)*.5));opacity:.8}
+#result:not(.light) .rcard{box-shadow:0 0 0 1px rgba(255,92,0,.55),0 0 60px rgba(255,92,0,.12)}
+/* config.js で resultTheme:"light" にすると、結果ページ全体が白に反転する */
+#result.light{background:#eef0f3;color:#0b0b0c}
+#result.light .rband{border-top-color:#0b0b0c}
+#result.light .rband>div+div{border-left-color:rgba(11,11,12,.18)}
+#result.light .rband .rw h3{color:#0b0b0c}
+#result.light .rband p,#result.light .rband .rp p{color:#55585e}
+#result.light .lbl{color:#0b0b0c;opacity:.6}
+#result.light .fig svg{stroke:#0b0b0c}
+#result.light .fig svg .fill{fill:#0b0b0c}
+#result.light .bar{background:rgba(11,11,12,.12)}
+#result.light .bar i{background:#0b0b0c}
 </style>
 <script src="config.js"></script>
 </head>
@@ -319,13 +358,13 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
 <div class="static" id="static" aria-hidden="true"></div>
 <div id="grid" hidden aria-label="落札した品の一覧"></div>
 <div id="arena" hidden>
-  <div class="ahead"><div><div class="lbl" id="aLot"></div><h2 id="aWorld"></h2><p id="aRule"></p></div><div class="lbl mute" id="aCount"></div></div>
+  <div class="ahead"><div><div class="lbl" id="aLot"></div><h2 id="aWorld"></h2><p id="aRule"></p></div><div class="ar"><div class="lbl mute" id="aCount"></div><i class="hat"></i></div></div>
   <div class="abody" id="abody"></div>
 </div>
 <div id="result" hidden></div>
 <div class="wrap" id="wrap">
   <header>
-    <div class="logo">異界オークション<em>.</em></div>
+    <div class="logo"><img class="hlogo" src="mvmnt-logo.png" alt="MVMNT"><i class="sl"></i><span>異界オークション<em>.</em></span></div>
     <div class="hr">
       <div class="lbl alert" id="mode">● LIVE · 監視中</div>
       <div class="lbl mute" id="lotno">LOT ----</div>
@@ -363,7 +402,7 @@ main{display:grid;grid-template-columns:auto minmax(0,1fr);gap:calc(var(--u)*3);
 
 <script>
 const $=s=>document.querySelector(s);
-const CFG=Object.assign({minSec:8,maxSec:28,lockSec:3,certSec:14,qrUrl:""},window.AUCTION||{});
+const CFG=Object.assign({minSec:8,maxSec:28,lockSec:3,certSec:14,qrUrl:"",resultTheme:"dark"},window.AUCTION||{});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -627,14 +666,14 @@ function sold(d,thumb,lot,c,world,k){
   const rec={lot,photo:S.photo||thumb,price:d.price,winner:enName(c,d.winner),t:Date.now()};
   const f=document.createElement("div");f.className="flash";document.body.append(f);setTimeout(()=>f.remove(),800);
   const R=$("#result");
-  R.innerHTML=`<div class="rwrap"><div class="rcard">${cardHTML(rec)}</div></div>
+  R.innerHTML=`<div class="rwrap"><div class="rcard">${cardHTML(rec,CFG.resultTheme==="light"?"":" dark")}</div></div>
     <div class="rband">
       <div class="rw"><span class="lbl">競売会場 · LOT ${lot}</span><h3>${esc(c.name)}</h3><p>${esc(c.rule)}</p></div>
       <div class="rp">${k>=0?figHTML(world,k,0):"<span></span>"}<div><span class="lbl">落札者</span><h3>${esc(d.winner)}</h3><p>${esc(d.use)}</p></div></div>
       <div class="rq"><span class="lbl">ひとこと</span><h3>「${esc(d.quote.replace(/\\n/g,"\n"))}」</h3></div>
     </div>
     <div class="bar"><i id="cbar"></i></div>`;
-  R.hidden=false;
+  R.classList.toggle("light",CFG.resultTheme==="light");R.hidden=false;
   setTimeout(()=>SND.stamp(),450);
   $("#cbar").animate([{transform:"scaleX(1)"},{transform:"scaleX(0)"}],{duration:CFG.certSec*1000,easing:"linear",fill:"forwards"});
   addLog(thumb,d,c);addLot(rec);
