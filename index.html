@@ -361,6 +361,7 @@ function idle(){
 function restartAnim(){stage.style.animation="none";void stage.offsetHeight;stage.style.animation=""}
 function schedule(){
   clearTimeout(S.timer);
+  if(gridOpen())return;   // グリッドを見ている間は撮らない
   const wait=rnd(CFG.minSec,CFG.maxSec)*1000;
   S.nextAt=performance.now()+wait;
   S.timer=setTimeout(lockOn,Math.max(0,wait-CFG.lockSec*1000));
@@ -368,7 +369,8 @@ function schedule(){
 async function lockOn(){
   if(S.phase!=="watch"||!S.stream)return schedule();
   S.phase="lock";cam.classList.add("lock");setMode("◎ TARGET LOCK");
-  for(let i=0;i<CFG.lockSec;i++){SND.beep(i);await sleep(1000)}
+  for(let i=0;i<CFG.lockSec;i++){if(gridOpen())break;SND.beep(i);await sleep(1000)}
+  if(gridOpen()){S.phase="watch";cam.classList.remove("lock");setMode("● LIVE · 監視中");return}
   shoot();
 }
 
@@ -588,14 +590,17 @@ const SND=(()=>{
   function init(){
     if(ac)return;ac=new (window.AudioContext||window.webkitAudioContext)();
     master=ac.createGain();master.gain.value=.8;master.connect(ac.destination);
-    const dl=ac.createDelay(1),fb=ac.createGain(),wet=ac.createGain();dl.delayTime.value=.33;fb.gain.value=.35;wet.gain.value=.3;dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(master);
+    const dl=ac.createDelay(1),fb=ac.createGain(),wet=ac.createGain();dl.delayTime.value=.28;fb.gain.value=.25;wet.gain.value=.2;dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(master);
     bgm=ac.createGain();bgm.gain.value=0;bgm.connect(master);bgm.connect(dl);
-    const fl=ac.createBiquadFilter();fl.type="lowpass";fl.frequency.value=420;fl.Q.value=6;
-    const lfo=ac.createOscillator(),lg=ac.createGain();lfo.frequency.value=.07;lg.gain.value=260;lfo.connect(lg);lg.connect(fl.frequency);lfo.start();
-    const g=ac.createGain();g.gain.value=.15;fl.connect(g);g.connect(bgm);
-    [[55,"sawtooth"],[82.5,"sawtooth"],[110.4,"triangle"]].forEach(([f,t],i)=>{const o=ac.createOscillator();o.type=t;o.frequency.value=f;o.detune.value=(i-1)*6;o.connect(fl);o.start()});
-    const N=[220,261.6,293.7,329.6,392,440,523.3];let k=0;
-    arp=setInterval(()=>{if(!on||Math.random()<.35)return;tone(N[(k*3+Math.floor(Math.random()*3))%N.length]*(Math.random()<.2?2:1),1.6,{type:"triangle",vol:.045,bus:bgm});k++},700);
+    // 明るく弾むループ（C → Am → F → G）
+    const CH=[[261.6,329.6,392,523.3],[220,261.6,329.6,440],[174.6,220,261.6,349.2],[196,246.9,293.7,392]];
+    const PENT=[523.3,587.3,659.3,784,880,1046.5];let st=0;
+    arp=setInterval(()=>{if(!on||ac.state!=="running")return;const c=CH[Math.floor(st/16)%4],k=st%16;
+      if(k%2===0)tone(c[[0,1,2,3,2,1,2,1][k/2]]*2,.28,{type:"triangle",vol:.04,bus:bgm});
+      if(k===0||k===6||k===10)tone(c[0]/2,.3,{type:"sine",vol:.13,bus:bgm});
+      if(k%4===2)noise(.04,{vol:.012,f:7000,q:.8,type:"highpass"});
+      if(k%4===0&&Math.random()<.45)tone(PENT[Math.floor(Math.random()*PENT.length)],.7,{type:"sine",vol:.03,bus:bgm});
+      st++},140);
   }
   function tone(freq,dur,{type="sine",vol=.3,at=0,slide=0,bus=master}={}){
     if(!ac||!on)return;const t=ac.currentTime+at,o=ac.createOscillator(),g=ac.createGain();
@@ -643,12 +648,17 @@ function renderGrid(newT){
   for(let i=0;i<9;i++){const l=LOTS[i];
     if(!l){h+=`<div class="gc empty"><div class="mid"><img class="logo" src="mvmnt-logo.png" alt="MVMNT"><span>AWAITING LOT</span></div></div>`;continue}
     h+=`<div class="gc${l.t===newT?" new":""}">${l.photo?`<img class="ph" alt="" src="${l.photo}">`:""}<div class="veil"></div><div class="dots"></div>
-      <div class="top"><img class="logo" src="mvmnt-logo.png" alt="MVMNT"><div class="pr"><i>¥</i>${fmt(l.price)}<s>&gt;</s></div></div>
+      <div class="top"><img class="logo" src="mvmnt-logo.png" alt="MVMNT"><div class="pr"><i>¥</i>${fmt(l.price)}</div></div>
       <div class="lotn">LOT ${esc(l.lot)}</div>
       <div class="bot"><div class="who"><small>SOLD TO</small><b>${esc(l.winner)}</b></div><div class="hatch"></div></div></div>`}
   g.innerHTML=h;
 }
-function toggleGrid(on){const g=$("#grid");g.hidden=on===undefined?!g.hidden:!on;if(!g.hidden)renderGrid()}
+function gridOpen(){return !$("#grid").hidden}
+function toggleGrid(on){
+  const g=$("#grid");g.hidden=on===undefined?!g.hidden:!on;
+  if(!g.hidden){renderGrid();clearTimeout(S.timer)}        // 開いたら自動撮影を止める
+  else if(S.phase==="watch"&&S.stream)schedule();          // 閉じたら再開
+}
 addEventListener("storage",e=>{if(e.key==="ikai_lots"){try{LOTS=JSON.parse(e.newValue||"[]")}catch{}renderGrid(LOTS[0]?.t)}});
 
 /* スタッフ用キー：Space＝今すぐ撮る、F＝全画面、G＝落札グリッド */
