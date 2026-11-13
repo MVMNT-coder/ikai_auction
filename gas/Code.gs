@@ -8,7 +8,7 @@
  *   ANTHROPIC_API_KEY  （必須）Claude API のキー
  *   MODEL              （任意）既定は claude-sonnet-5-5
  *   RATE_PER_MIN       （任意）1分あたりの受付上限。既定 20
- *   SAVE_IMAGES        （任意）"true" にすると写真をドライブに保存する（既定は保存しない）
+ *   SAVE_IMAGES        （任意）"false" にすると写真をドライブに保存しない（既定は保存して、シートにリンクを書く）
  *   IMAGE_FOLDER_ID    （任意）写真の保存先フォルダID。未設定なら自動で作る
  */
 
@@ -175,7 +175,7 @@ function rateOk_() {
 }
 
 function saveImage_(imageBase64) {
-  if (PROPS.getProperty('SAVE_IMAGES') !== 'true') return '';
+  if (PROPS.getProperty('SAVE_IMAGES') === 'false') return '';   // 既定で保存する。止めたいときだけ false
   let folderId = PROPS.getProperty('IMAGE_FOLDER_ID'), folder;
   if (folderId) folder = DriveApp.getFolderById(folderId);
   else { folder = DriveApp.createFolder('ikai_auction_images'); PROPS.setProperty('IMAGE_FOLDER_ID', folder.getId()); }
@@ -187,6 +187,7 @@ function logRow_(r, c, photoUrl) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) { sh = ss.insertSheet(SHEET_NAME); sh.appendRow(HEADERS); sh.setFrozenRows(1); }
+  else if (String(sh.getRange(1, 4).getValue()) !== HEADERS[3]) sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);   // 古い見出しを今の列に合わせる
   sh.appendRow([new Date(), c.name, r.item, r.appraisal, r.winner, r.price, '円', r.use, r.quote, (r.bids || []).length, photoUrl]);
 }
 
@@ -199,4 +200,6 @@ function setupCheck() {
   console.log('API key set:', !!PROPS.getProperty('ANTHROPIC_API_KEY'));
   UrlFetchApp.fetch('https://api.anthropic.com', { muteHttpExceptions: true });
   SpreadsheetApp.getActiveSpreadsheet();
+  DriveApp.getRootFolder();   // 写真の保存に必要なドライブの許可を出す
+  console.log('image folder:', PROPS.getProperty('IMAGE_FOLDER_ID') || '(最初の保存時に ikai_auction_images を作成)');
 }
